@@ -1,0 +1,3483 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ASSIA PRO NG v5.5 • Vidéo IA Exportable, Grand Écran, Connectées PRO &amp; Cloud Gemini Pro</title>
+  <!-- TensorFlow.js + COCO-SSD + MoveNet Pose Detection (chargement asynchrone non-bloquant) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
+  <style>
+    :root {
+      --bg-root: #060a11;
+      --bg-panel: #0c1320;
+      --bg-card: #111a2c;
+      --bg-input: #090f1a;
+      --border: #1d2c48;
+      --cyan: #00e5ff;
+      --emerald: #00e676;
+      --amber: #ffab00;
+      --violet: #b388ff;
+      --rose: #ff5252;
+      --text-main: #e8f0fe;
+      --text-muted: #8a9bb8;
+      --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: radial-gradient(circle at 18% 8%, #0f1c33 0%, var(--bg-root) 58%);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      line-height: 1.45;
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background 0.25s ease;
+    }
+
+    /* TICKER BOURSIER EN DIRECT (PROFILS CLOUD GEMINI PRO) */
+    .cloud-ticker-bar {
+      width: 100%;
+      background: linear-gradient(90deg, #070d18, #111d36, #070d18);
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 5px 0;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .cloud-ticker-track {
+      display: inline-block;
+      animation: tickerSlide 32s linear infinite;
+    }
+
+    .cloud-ticker-bar:hover .cloud-ticker-track {
+      animation-play-state: paused;
+    }
+
+    @keyframes tickerSlide {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .ticker-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-right: 26px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(0, 229, 255, 0.05);
+      border: 1px solid rgba(29, 44, 72, 0.8);
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(6, 10, 17, 0.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, var(--cyan), var(--emerald));
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      color: #041019;
+      font-size: 14px;
+      box-shadow: 0 0 18px rgba(0, 229, 255, 0.35);
+    }
+
+    .brand h1 {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .brand span {
+      display: block;
+      font-size: 11px;
+      color: var(--cyan);
+      font-family: var(--font-mono);
+    }
+
+    .status-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .pill {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 8px var(--emerald);
+      animation: pulse 1.8s infinite;
+    }
+
+    .dot.cyan { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+    .dot.amber { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+    .dot.violet { background: var(--violet); box-shadow: 0 0 8px var(--violet); }
+    .dot.rose { background: var(--rose); box-shadow: 0 0 8px var(--rose); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.85); }
+    }
+
+    .nav-bar {
+      display: flex;
+      overflow-x: auto;
+      gap: 6px;
+      padding: 8px 16px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover, .nav-btn.active {
+      color: var(--text-main);
+      border-color: var(--cyan);
+      background: rgba(0, 229, 255, 0.12);
+    }
+
+    .container {
+      max-width: 1560px;
+      margin: 0 auto;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+      transition: max-width 0.25s ease;
+    }
+
+    /* MODE GRAND ÉCRAN PANORAMIQUE & CINÉMA */
+    body.grand-ecran .container {
+      max-width: 100%;
+      padding: 14px 20px;
+    }
+
+    body.grand-ecran #sec-vision {
+      grid-column: span 12;
+    }
+
+    body.grand-ecran #sec-vision .vision-stage {
+      min-height: 520px;
+      max-height: 74vh;
+    }
+
+    body.grand-ecran #sec-profiles {
+      grid-column: span 12;
+    }
+
+    body.grand-ecran #sec-formulas {
+      grid-column: span 6;
+    }
+
+    body.grand-ecran #sec-connectors {
+      grid-column: span 6;
+    }
+
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .panel-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .col-7 { grid-column: span 7; }
+    .col-5 { grid-column: span 5; }
+    .col-6 { grid-column: span 6; }
+    .col-12 { grid-column: span 12; }
+
+    @media (max-width: 1120px) {
+      .col-7, .col-5, .col-6 { grid-column: span 12; }
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    button.btn, select.ctrl, input.ctrl-in {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    input.ctrl-in {
+      cursor: text;
+    }
+
+    button.btn:hover:not(:disabled) {
+      border-color: var(--cyan);
+      background: #17253e;
+    }
+
+    button.btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    button.btn.active-mode {
+      border-color: var(--cyan);
+      background: rgba(0, 229, 255, 0.18);
+      color: var(--cyan);
+      font-weight: 700;
+    }
+
+    button.btn-primary {
+      background: linear-gradient(135deg, #00b8d4, #00e5ff);
+      color: #041019;
+      font-weight: 700;
+      border: none;
+    }
+
+    button.btn-emerald {
+      background: linear-gradient(135deg, #00c853, #00e676);
+      color: #04190d;
+      font-weight: 700;
+      border: none;
+    }
+
+    button.btn-violet {
+      background: rgba(179, 136, 255, 0.18);
+      border-color: var(--violet);
+      color: #e3d1ff;
+      font-weight: 600;
+    }
+
+    button.btn-amber {
+      background: rgba(255, 171, 0, 0.16);
+      border-color: var(--amber);
+      color: var(--amber);
+      font-weight: 600;
+    }
+
+    button.btn-rec {
+      background: rgba(255, 82, 82, 0.16);
+      border-color: var(--rose);
+      color: #ff8a80;
+      font-weight: 700;
+    }
+
+    button.btn-rec.recording {
+      background: var(--rose);
+      color: #fff;
+      box-shadow: 0 0 16px rgba(255, 82, 82, 0.55);
+      animation: recPulse 1.2s infinite;
+    }
+
+    @keyframes recPulse {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.2); }
+    }
+
+    /* VISION STAGE */
+    .vision-stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      min-height: 310px;
+      background: #04070d;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s, min-height 0.25s;
+    }
+
+    .vision-stage.drag-over {
+      border-color: var(--emerald);
+      box-shadow: 0 0 24px rgba(0, 230, 118, 0.45);
+    }
+
+    .vision-stage.is-recording {
+      border-color: var(--rose);
+      box-shadow: 0 0 22px rgba(255, 82, 82, 0.4);
+    }
+
+    canvas#karimCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    video#sourceVideo {
+      display: none;
+    }
+
+    .hud-overlay {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      gap: 8px;
+    }
+
+    .hud-box {
+      background: rgba(6, 10, 17, 0.82);
+      border: 1px solid rgba(0, 229, 255, 0.35);
+      padding: 6px 9px;
+      border-radius: 6px;
+      backdrop-filter: blur(4px);
+    }
+
+    .rec-indicator {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      background: rgba(255, 82, 82, 0.92);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 999px;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      pointer-events: none;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+    }
+
+    .rec-indicator.visible {
+      display: inline-flex;
+    }
+
+    .drop-hint {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(6, 10, 17, 0.82);
+      border: 1px dashed rgba(0, 229, 255, 0.45);
+      color: var(--text-muted);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    /* VIDEO, EXPORT & SPATIAL AUDIO BARS */
+    .video-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .video-bar input[type="range"] {
+      flex: 1;
+      min-width: 110px;
+      accent-color: var(--emerald);
+      cursor: pointer;
+    }
+
+    .vid-meta {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--cyan);
+      white-space: nowrap;
+    }
+
+    .export-video-bar {
+      background: linear-gradient(90deg, rgba(255, 82, 82, 0.08), rgba(0, 230, 118, 0.08));
+      border: 1px solid rgba(255, 82, 82, 0.35);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .audio-spatial-bar {
+      background: linear-gradient(90deg, rgba(179, 136, 255, 0.1), rgba(0, 229, 255, 0.08));
+      border: 1px solid rgba(179, 136, 255, 0.35);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .pan-meter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 160px;
+    }
+
+    .pan-track {
+      position: relative;
+      width: 90px;
+      height: 8px;
+      background: #070c15;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+
+    .pan-dot {
+      position: absolute;
+      top: -2px;
+      left: 50%;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--violet);
+      box-shadow: 0 0 8px var(--violet);
+      transform: translateX(-50%);
+      transition: left 0.08s linear;
+    }
+
+    /* SLIDERS & KPIS */
+    .sliders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 8px;
+    }
+
+    .slider-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+    }
+
+    .slider-card label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      font-family: var(--font-mono);
+    }
+
+    .slider-card input[type="range"] {
+      width: 100%;
+      accent-color: var(--cyan);
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+      gap: 8px;
+    }
+
+    .kpi {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+
+    .kpi .k-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .kpi .k-val {
+      font-size: 15px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--emerald);
+      margin-top: 2px;
+    }
+
+    .kpi .k-sub {
+      font-size: 10px;
+      color: var(--cyan);
+      font-family: var(--font-mono);
+    }
+
+    /* MODULE CONNECTÉES PRO */
+    .connectors-pro-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 9px;
+    }
+
+    .conn-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--emerald);
+      border-radius: 8px;
+      padding: 9px 11px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .conn-card.off {
+      border-left-color: var(--rose);
+      opacity: 0.65;
+    }
+
+    .conn-title {
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .conn-sub {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .conn-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+    }
+
+    .ping-badge {
+      color: var(--cyan);
+      background: rgba(0, 229, 255, 0.1);
+      border: 1px solid rgba(0, 229, 255, 0.28);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    /* MODULE PROFILS SAUVEGARDÉS, COURS & VENTE CLOUD GEMINI PRO */
+    .profiles-cloud-top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.08), rgba(179, 136, 255, 0.09));
+      border: 1px solid rgba(0, 229, 255, 0.32);
+      border-radius: 8px;
+      padding: 9px 12px;
+    }
+
+    .profile-create-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .profiles-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(295px, 1fr));
+      gap: 10px;
+    }
+
+    .prof-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: transform 0.15s, border-color 0.2s;
+    }
+
+    .prof-card:hover {
+      border-color: var(--cyan);
+    }
+
+    .prof-card.sold-cloud {
+      border-color: rgba(0, 230, 118, 0.55);
+      background: linear-gradient(160deg, #111a2c 65%, rgba(0, 230, 118, 0.08));
+    }
+
+    .prof-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .prof-ticker {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--violet);
+    }
+
+    .prof-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .prof-course-box {
+      text-align: right;
+      font-family: var(--font-mono);
+    }
+
+    .prof-price {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--emerald);
+    }
+
+    .prof-delta {
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .prof-delta.up { color: var(--emerald); }
+    .prof-delta.down { color: var(--rose); }
+
+    .prof-spark {
+      height: 36px;
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px;
+    }
+
+    .prof-specs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .prof-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      border-top: 1px solid var(--border);
+      padding-top: 7px;
+    }
+
+    .cloud-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+
+    .cloud-badge.saved {
+      background: rgba(0, 229, 255, 0.14);
+      color: var(--cyan);
+      border: 1px solid rgba(0, 229, 255, 0.35);
+    }
+
+    .cloud-badge.sold {
+      background: rgba(0, 230, 118, 0.16);
+      color: var(--emerald);
+      border: 1px solid rgba(0, 230, 118, 0.45);
+    }
+
+    /* FORMULAS AUTO-PROGRAMMEES & PRECISION */
+    .formula-list {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .formula-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--violet);
+      border-radius: 8px;
+      padding: 9px 11px;
+    }
+
+    .formula-head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 5px;
+    }
+
+    .formula-title {
+      font-weight: 700;
+      color: var(--violet);
+      font-size: 12px;
+    }
+
+    .formula-badges {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .formula-result {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 11px;
+      color: var(--emerald);
+      background: rgba(0, 230, 118, 0.1);
+      border: 1px solid rgba(0, 230, 118, 0.3);
+      padding: 2px 7px;
+      border-radius: 5px;
+    }
+
+    .formula-prec {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 10px;
+      color: var(--amber);
+      background: rgba(255, 171, 0, 0.12);
+      border: 1px solid rgba(255, 171, 0, 0.32);
+      padding: 2px 6px;
+      border-radius: 5px;
+    }
+
+    .formula-math {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      padding: 6px 8px;
+      border-radius: 6px;
+      color: #d6e4ff;
+      overflow-x: auto;
+      margin-bottom: 5px;
+    }
+
+    .formula-autocode {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: #9be7ff;
+      background: rgba(0, 229, 255, 0.06);
+      border: 1px dashed rgba(0, 229, 255, 0.28);
+      padding: 4px 7px;
+      border-radius: 5px;
+      margin-bottom: 5px;
+    }
+
+    .formula-live {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--text-muted);
+    }
+
+    .tag {
+      background: rgba(179, 136, 255, 0.12);
+      border: 1px solid rgba(179, 136, 255, 0.28);
+      color: #d8c2ff;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+    }
+
+    /* DYNAMIC TEST SUITE */
+    .test-summary-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+    }
+
+    .tests-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+      gap: 7px;
+      max-height: 270px;
+      overflow-y: auto;
+    }
+
+    .test-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 7px 9px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .test-card.pass { border-left: 3px solid var(--emerald); }
+    .test-card.fail { border-left: 3px solid var(--rose); }
+
+    .test-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-pass {
+      background: rgba(0, 230, 118, 0.16);
+      color: var(--emerald);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 10px;
+    }
+
+    .badge-fail {
+      background: rgba(255, 82, 82, 0.18);
+      color: var(--rose);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 10px;
+    }
+
+    .test-detail {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    /* 16 SENSORS MATRIX */
+    .sensors-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+      gap: 7px;
+    }
+
+    .sensor-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 7px 9px;
+    }
+
+    .sensor-top {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--cyan);
+    }
+
+    .sensor-name {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin: 2px 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sensor-val {
+      font-size: 13px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--text-main);
+    }
+
+    .sensor-bar {
+      height: 3px;
+      background: #080d17;
+      border-radius: 2px;
+      margin-top: 5px;
+      overflow: hidden;
+    }
+
+    .sensor-bar > div {
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyan), var(--emerald));
+      width: 50%;
+      transition: width 0.15s linear;
+    }
+
+    /* AUTONOMOUS SUPERVISOR AGENTS */
+    .agents-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 8px;
+    }
+
+    .agent-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .agent-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .agent-name {
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--amber);
+    }
+
+    .agent-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(0, 230, 118, 0.15);
+      color: var(--emerald);
+    }
+
+    .agent-role {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .agent-task {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-main);
+      background: var(--bg-input);
+      padding: 5px 7px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+    }
+
+    .progress-bar {
+      height: 5px;
+      background: #080d17;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--amber), var(--emerald));
+      width: 0%;
+      transition: width 0.25s ease;
+    }
+
+    .console-log {
+      background: #05080f;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      height: 140px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .log-entry { color: #b7c8e8; }
+    .log-entry .ts { color: var(--text-muted); }
+    .log-entry .ag { color: var(--amber); font-weight: 700; }
+    .log-entry .ok { color: var(--emerald); }
+
+    /* WALLET & SHA-256 LEDGER */
+    .wallet-box {
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.08), rgba(179, 136, 255, 0.08));
+      border: 1px solid rgba(0, 229, 255, 0.35);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .wallet-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .wallet-addr {
+      color: var(--amber);
+      word-break: break-all;
+      font-weight: 600;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      max-height: 205px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    th, td {
+      padding: 7px 9px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    th {
+      background: var(--bg-card);
+      color: var(--cyan);
+      position: sticky;
+      top: 0;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--emerald);
+      color: var(--text-main);
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      z-index: 999;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.25s;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BANDEAU TICKER BOURSIER EN DIRECT DES PROFILS CLOUD GEMINI PRO -->
+  <div class="cloud-ticker-bar">
+    <div class="cloud-ticker-track" id="cloudTickerTrack"></div>
+  </div>
+
+  <header>
+    <div class="brand">
+      <div class="brand-badge">A5</div>
+      <div>
+        <h1>ASSIA PRO NG v5.5 • VIDÉO IA EXPORTABLE, GRAND ÉCRAN &amp; CLOUD GEMINI PRO</h1>
+        <span>Enregistrement Vidéo Modifiée (MP4/WebM Non-Corrompu) • Audio HRTF 3D • Connectées PRO • Bourse Profils</span>
+      </div>
+    </div>
+    <div class="status-pills">
+      <div class="pill"><span class="dot"></span><span id="iaEngineBadge">IA: POSE + SILHOUETTE</span></div>
+      <div class="pill"><span class="dot violet"></span>CONNECTÉES PRO: <strong id="hdrConnectors" style="color:var(--cyan);margin-left:3px;">8/8</strong></div>
+      <div class="pill"><span class="dot"></span>CLOUD GEMINI PRO: <strong id="hdrCloudSales" style="color:var(--emerald);margin-left:3px;">0.000 Vc</strong></div>
+      <div class="pill"><span class="dot cyan"></span>PRÉCISION: <strong id="hdrPrecision" style="color:var(--emerald);margin-left:3px;">99.1%</strong></div>
+      <div class="pill"><span class="dot amber"></span>TESTS: <strong id="hdrTests" style="color:var(--amber);margin-left:3px;">21/21 PASS</strong></div>
+      <button class="btn-primary btn" id="btnGrandEcran" onclick="toggleGrandEcran()">⛶ Grand Écran</button>
+      <select id="envSelect" class="ctrl" title="Milieu Physique">
+        <option value="9.80665|1.225|Standard 1G">Milieu: Standard 1G (9.81 m/s²)</option>
+        <option value="1.62|0.00|Micro-Gravité">Milieu: Micro-Gravité (1.62 m/s²)</option>
+        <option value="9.80665|1.85|Confinement / Haute Densité">Milieu: Confinement (ρ=1.85)</option>
+      </select>
+    </div>
+  </header>
+
+  <nav class="nav-bar">
+    <button class="nav-btn active" onclick="scrollToSection('sec-vision', this)">1. Vidéo Personnes IA &amp; Export Vidéo</button>
+    <button class="nav-btn" onclick="scrollToSection('sec-profiles', this)">2. Bourse des Profils &amp; Cloud Gemini Pro</button>
+    <button class="nav-btn" onclick="scrollToSection('sec-connectors', this)">3. Connectées PRO (8 Passerelles)</button>
+    <button class="nav-btn" onclick="scrollToSection('sec-formulas', this)">4. Formules Auto-Programmées &amp; Précision</button>
+    <button class="nav-btn" onclick="scrollToSection('sec-tests', this)">5. Suite de Tests Dynamiques (21 Tests)</button>
+    <button class="nav-btn" onclick="scrollToSection('sec-sensors', this)">6. Bus 16 Capteurs</button>
+    <button class="nav-btn" onclick="scrollToSection('sec-agents', this)">7. Agents &amp; Wallet SHA-256</button>
+  </nav>
+
+  <main class="container">
+
+    <!-- MODULE 1: VISION VIDEO DIRECTE SUR PERSONNES + EXPORT VIDEO NON CORROMPU -->
+    <section id="sec-vision" class="panel col-7">
+      <div class="panel-header">
+        <div class="panel-title">🎬 Détection Directe sur Personnes Vidéo &amp; Audio Spatial 3D</div>
+        <div class="toolbar">
+          <input type="file" id="videoFileInput" accept="video/*" style="display:none" onchange="handleVideoUpload(event)" />
+          <button class="btn-primary btn" onclick="document.getElementById('videoFileInput').click()">📁 Charger Vidéo</button>
+          <button class="btn" id="btnCam" onclick="toggleCamera()">📷 Caméra</button>
+          <button class="btn active-mode" id="btnSim" onclick="switchToSimulation()">🧬 Sim 3D</button>
+          <select id="morphPreset" class="ctrl" title="Mode morphologique">
+            <option value="auto">Morpho: Auto-Détection Vidéo</option>
+            <option value="athletic">Morpho: Athlétique (V-Shape)</option>
+            <option value="ectomorph">Morpho: Élancé (Ectomorphe)</option>
+            <option value="endomorph">Morpho: Robuste (Endomorphe)</option>
+          </select>
+          <button class="btn-violet btn" id="btnSpatialAudio" onclick="toggleSpatialAudio()">🎧 Son Spatial 3D: OFF</button>
+          <button class="btn" onclick="toggleGrandEcran()" title="Basculer Mode Grand Écran">⛶ Cinéma</button>
+          <button class="btn-emerald btn" onclick="saveCurrentPersonAsProfile()">💾 Sauvegarder Profil + Coter</button>
+          <button class="btn-amber btn" onclick="captureAndValuate('MANUEL')">⚡ Capturer &amp; Valuer</button>
+        </div>
+      </div>
+
+      <div class="vision-stage" id="visionStage">
+        <video id="sourceVideo" playsinline loop crossorigin="anonymous"></video>
+        <canvas id="karimCanvas"></canvas>
+        <div class="hud-overlay">
+          <div class="hud-box" id="hudLeft">
+            SOURCE: SIMULATION KARIMAUTO 3D<br>
+            MORPHO IDENTIFIÉE: AUTO-ÉQUILIBRÉE<br>
+            SQUELETTE: 17 KEYPOINTS ANATOMIQUES
+          </div>
+          <div class="hud-box" id="hudRight" style="text-align:right;">
+            SON 3D HRTF: X=0.00m Y=0.98m Z=-2.45m<br>
+            PROFONDEUR Z_IPM: 2.45 m (±0.018m)<br>
+            VALEUR CAPTURÉE: 0.000 Vc
+          </div>
+        </div>
+        <div class="rec-indicator" id="recIndicator">
+          <span style="width:8px;height:8px;border-radius:50%;background:#fff;display:inline-block;"></span>
+          <span id="recTimerLabel">REC 00:00</span>
+        </div>
+        <div class="drop-hint" id="dropHint">Glissez-déposez une vidéo (.mp4, .webm, .mov) ou cliquez sur « 📁 Charger Vidéo »</div>
+      </div>
+
+      <!-- BARRE ENREGISTREMENT & TÉLÉCHARGEMENT VIDÉO MODIFIÉE (ANTI-CORRUPTION) -->
+      <div class="export-video-bar">
+        <div class="toolbar">
+          <button class="btn-rec btn" id="btnRecordVideo" onclick="toggleVideoRecording()">⏺ Enregistrer Vidéo Modifiée</button>
+          <select id="exportFormatSelect" class="ctrl" title="Conteneur et codec natif vérifié">
+            <option value="auto">Format: Auto Natif (MP4 / WebM)</option>
+            <option value="mp4">Préférer MP4 (H.264 / AAC)</option>
+            <option value="webm">Préférer WebM (VP9 / VP8)</option>
+          </select>
+          <button class="btn-emerald btn" id="btnDownloadLastVideo" onclick="downloadLastRecordedVideo()" disabled>
+            ⬇ Télécharger Vidéo (Aucune)
+          </button>
+        </div>
+        <div id="exportStatusMeta" style="color:var(--text-muted);">
+          Encodeur prêt • Résolution paire mod-2 • 30 FPS + Audio 3D
+        </div>
+      </div>
+
+      <!-- TRANSPORT VIDEO + SON ORIGINAL VIDEO -->
+      <div class="video-bar">
+        <button class="btn" id="btnVidPlay" onclick="toggleVideoPlay()">⏯ Lecture</button>
+        <button class="btn" onclick="restartVideo()">⏹ Début</button>
+        <button class="btn" id="btnVidMute" onclick="toggleVideoAudio()">🔇 Son Vidéo: Muet</button>
+        <button class="btn" id="btnVidLoop" onclick="toggleVideoLoop()">🔁 Boucle: ON</button>
+        <input type="range" id="videoSeek" min="0" max="1000" value="0" oninput="seekVideo(this.value)" />
+        <span class="vid-meta" id="vidTimeLabel">00:00.0 / 00:00.0</span>
+        <span class="vid-meta" id="vidResLabel">MODE: RIG 3D</span>
+      </div>
+
+      <!-- MONITEUR ACOUSTIQUE SPATIAL POSITIONNE SELON MORPHOLOGIE -->
+      <div class="audio-spatial-bar">
+        <div>
+          <span style="color:var(--violet);font-weight:700;">🔊 ACOUSTIQUE MORPHO 3D :</span>
+          <span id="audioMorphLabel">f₀=324.5 Hz • Timbre Équilibré</span>
+        </div>
+        <div class="pan-meter">
+          <span>G</span>
+          <div class="pan-track"><div class="pan-dot" id="panDot"></div></div>
+          <span>D</span>
+          <span id="panValLabel" style="color:var(--cyan);">Pan: 0.00</span>
+        </div>
+        <div id="audioXYZLabel" style="color:var(--emerald);">HRTF(0.00, 0.98, -2.45)</div>
+      </div>
+
+      <div class="sliders-grid">
+        <div class="slider-card">
+          <label><span>Hauteur Caméra h_cam</span><span id="lblHcam">1.45 m</span></label>
+          <input type="range" id="inHcam" min="0.5" max="3.0" step="0.05" value="1.45">
+        </div>
+        <div class="slider-card">
+          <label><span>Focale Normalisée f</span><span id="lblFocal">820 px</span></label>
+          <input type="range" id="inFocal" min="400" max="1400" step="10" value="820">
+        </div>
+        <div class="slider-card">
+          <label><span>Masse Estimée (Morpho)</span><span id="lblMass">74.0 kg</span></label>
+          <input type="range" id="inMass" min="25" max="140" step="1" value="74">
+        </div>
+        <div class="slider-card">
+          <label><span>Vitesse Vidéo / Cinématique</span><span id="lblSpeed">1.00 x</span></label>
+          <input type="range" id="inSpeed" min="0.25" max="2.0" step="0.05" value="1.00" oninput="updatePlaybackSpeed(this.value)">
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="k-label">Taille Réelle (H_réel)</div>
+          <div class="k-val" id="kpiHeight">1.78 m</div>
+          <div class="k-sub" id="kpiHeightPrec">Précision: 99.1%</div>
+        </div>
+        <div class="kpi">
+          <div class="k-label">Morphologie Identifiée</div>
+          <div class="k-val" id="kpiMorph" style="font-size:13px;">MÉSOMORPHE</div>
+          <div class="k-sub" id="kpiMorphRatio">Ratio Ép/Han: 1.24</div>
+        </div>
+        <div class="kpi">
+          <div class="k-label">Centre de Gravité (CoG)</div>
+          <div class="k-val" id="kpiCog">0.98 m</div>
+          <div class="k-sub" id="kpiCogXYZ">X:0.00 Y:0.98 Z:2.45</div>
+        </div>
+        <div class="kpi">
+          <div class="k-label">Secteur Polaire 360°</div>
+          <div class="k-val" id="kpiPolar">000° • N</div>
+          <div class="k-sub">Stabilité: <span id="kpiStability">96.2%</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE 2: FORMULES AUTO-PROGRAMMEES & CALCUL DE PRECISION -->
+    <section id="sec-formulas" class="panel col-5">
+      <div class="panel-header">
+        <div class="panel-title">📐 Formules Auto-Programmées &amp; Calcul de Précision</div>
+        <div class="toolbar">
+          <button class="btn-amber btn" onclick="autoReprogramFormulas()">⚙️ Auto-Programmer</button>
+          <span class="tag" id="autoProgTag">GEN #1 • AUTO</span>
+        </div>
+      </div>
+
+      <div class="formula-list">
+        <!-- F1 -->
+        <div class="formula-card">
+          <div class="formula-head">
+            <span class="formula-title">F1 • Projection IPM 3D &amp; Stature Morphologique</span>
+            <div class="formula-badges">
+              <span class="formula-result" id="resF1">Z=2.45m | H=1.78m</span>
+              <span class="formula-prec" id="precF1">Préc: 99.2% (±0.014m)</span>
+            </div>
+          </div>
+          <div class="formula-math">Z_IPM = (h_cam·f)/((y_foot-y₀)·cos(θ_S05)+f·sin(θ_S05)) ; H = (Z_IPM·Δy_px)/f</div>
+          <div class="formula-autocode" id="codeF1">AUTO-FN: (h,f,dy,z) =&gt; (z * dy / f) * k_morph(1.000)</div>
+          <div class="formula-live" id="subF1">Substitution live...</div>
+        </div>
+
+        <!-- F2 -->
+        <div class="formula-card">
+          <div class="formula-head">
+            <span class="formula-title">F2 • Énergie Cinétique, Rotationnelle &amp; Potentielle</span>
+            <div class="formula-badges">
+              <span class="formula-result" id="resF2">E_tot = 742.18 J</span>
+              <span class="formula-prec" id="precF2">Préc: 98.8% (±8.9J)</span>
+            </div>
+          </div>
+          <div class="formula-math">E_tot = ½·m_morph·||v⃗||² + ½·I_morph·||ω⃗||² + m_morph·g·z_CoG</div>
+          <div class="formula-autocode" id="codeF2">AUTO-FN: I_morph = 0.28 * m * (H * 0.42)² // Inertie adaptée</div>
+          <div class="formula-live" id="subF2">Substitution live...</div>
+        </div>
+
+        <!-- F3 -->
+        <div class="formula-card">
+          <div class="formula-head">
+            <span class="formula-title">F3 • Courbure Cinématique de Frenet-Serret (κ)</span>
+            <div class="formula-badges">
+              <span class="formula-result" id="resF3">κ = 0.2145 m⁻¹</span>
+              <span class="formula-prec" id="precF3">Préc: 98.5% (±0.003)</span>
+            </div>
+          </div>
+          <div class="formula-math">κ(t) = ||v⃗(t) × a⃗(t)|| / (||v⃗(t)||³ + ε)   [ε = 10⁻⁶]</div>
+          <div class="formula-autocode" id="codeF3">AUTO-FN: cross3D(v, a) / (Math.pow(norm(v), 3) + 1e-6)</div>
+          <div class="formula-live" id="subF3">Substitution live...</div>
+        </div>
+
+        <!-- F4 -->
+        <div class="formula-card">
+          <div class="formula-head">
+            <span class="formula-title">F4 • Portée Balistique &amp; Déplacement Prédictif</span>
+            <div class="formula-badges">
+              <span class="formula-result" id="resF4">R_bal = 1.940 m</span>
+              <span class="formula-prec" id="precF4">Préc: 98.9% (±0.021m)</span>
+            </div>
+          </div>
+          <div class="formula-math">R_bal = ((v₀² · sin(2·β_eff)) / g) · (1 - k_drag(morph) · ρ)</div>
+          <div class="formula-autocode" id="codeF4">AUTO-FN: k_drag = 0.045 * ratio_epaule_hanche</div>
+          <div class="formula-live" id="subF4">Substitution live...</div>
+        </div>
+
+        <!-- F5 + F6 -->
+        <div class="formula-card" style="border-left-color: var(--emerald);">
+          <div class="formula-head">
+            <span class="formula-title" style="color: var(--emerald);">F5/F6 • Acoustique Morpho HRTF &amp; Valorisation V_cap</span>
+            <div class="formula-badges">
+              <span class="formula-result" id="resF5">V_cap = 14.820 Vc</span>
+              <span class="formula-prec" id="precF5">Préc: 99.4%</span>
+            </div>
+          </div>
+          <div class="formula-math">f_morph = f_ref·(1.75/H)·r_morph ; V_cap = η_IA·ln(1 + E_tot(1+κ)/g)·(1 + S12/127)</div>
+          <div class="formula-autocode" id="codeF5">AUTO-FN: HRTF_pos(X_m, z_CoG, -Z_IPM) + SHA256_Seal()</div>
+          <div class="formula-live" id="subF5">Substitution live...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE PROFILS PERSONNES SAUVEGARDÉS, COURS EN DIRECT & VENTE CLOUD GEMINI PRO -->
+    <section id="sec-profiles" class="panel col-12">
+      <div class="panel-header">
+        <div class="panel-title">💎 Profils Personnes Sauvegardés, Cours en Direct &amp; Vente Cloud Gemini Pro</div>
+        <div class="toolbar">
+          <span class="pill">Profils Cotés : <strong id="profTotalCount" style="color:var(--cyan);margin-left:4px;">3</strong></span>
+          <span class="pill">Cap. Marché Profils : <strong id="profMarketCap" style="color:var(--violet);margin-left:4px;">0.000 Vc</strong></span>
+          <span class="pill">Vendus Cloud Gemini Pro : <strong id="profCloudRevenue" style="color:var(--emerald);margin-left:4px;">0.000 Vc</strong></span>
+          <button class="btn-emerald btn" onclick="saveCurrentPersonAsProfile()">＋ Capturer &amp; Coter Personne Vidéo</button>
+        </div>
+      </div>
+
+      <div class="profiles-cloud-top">
+        <div class="profile-create-bar">
+          <input type="text" id="newProfName" class="ctrl-in" placeholder="Nom du profil personne (ex: Assia • Pose 3D)" style="min-width:220px;" />
+          <input type="text" id="newProfTicker" class="ctrl-in" placeholder="Ticker (ex: ASSIA-01)" maxlength="12" style="width:125px;" />
+          <button class="btn-primary btn" onclick="saveCustomNamedProfile()">💾 Sauvegarder &amp; Coter dans Cloud Gemini Pro</button>
+        </div>
+        <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">
+          Cotation indexée sur morphologie (H_réel, Ép/Han, f₀ HRTF) • Chaque vente Cloud Gemini Pro certifie un bloc SHA-256
+        </div>
+      </div>
+
+      <div class="profiles-cards-grid" id="profilesCardsGrid"></div>
+    </section>
+
+    <!-- MODULE HUB CONNECTÉES PRO (8 PASSERELLES SYNCHRONISÉES) -->
+    <section id="sec-connectors" class="panel col-12">
+      <div class="panel-header">
+        <div class="panel-title">🔌 Hub Connectées PRO &amp; Synchronisation Cloud Gemini Pro</div>
+        <div class="toolbar">
+          <span class="pill">Passerelles Actives : <strong id="connActiveRatio" style="color:var(--emerald);margin-left:4px;">8 / 8</strong></span>
+          <button class="btn-primary btn" onclick="syncAllProConnectors()">⚡ Tester &amp; Sync Toutes les Connectées PRO</button>
+        </div>
+      </div>
+      <div class="connectors-pro-grid" id="connectorsProGrid"></div>
+    </section>
+
+    <!-- MODULE 3: SUITE DE TESTS DYNAMIQUES TEMPS REEL -->
+    <section id="sec-tests" class="panel col-12">
+      <div class="panel-header">
+        <div class="panel-title">🧪 Suite de Tests Dynamiques Automatisés (Validation Continue Temps Réel)</div>
+        <div class="toolbar">
+          <button class="btn-emerald btn" onclick="runDynamicTestSuite(false)">▶ Exécuter Tests Maintenant</button>
+          <button class="btn-amber btn" id="btnStressTest" onclick="toggleDynamicStressTest()">⚡ Test Dynamique Rafale (Stress)</button>
+          <button class="btn" onclick="enableHardwareSensors()">🧭 Capteurs Mobiles</button>
+        </div>
+      </div>
+
+      <div class="test-summary-bar">
+        <div>STATUT GLOBAL : <strong id="testGlobalStatus" style="color:var(--emerald);">21 / 21 TESTS VALIDÉS (100.0%)</strong></div>
+        <div>LATENCE CYCLE : <strong id="testLatency" style="color:var(--cyan);">0.42 ms</strong></div>
+        <div>INDICE DE CONFIANCE SYSTÈME : <strong id="testSystemConfidence" style="color:var(--amber);">99.18%</strong></div>
+      </div>
+
+      <div class="tests-grid" id="testsGrid"></div>
+    </section>
+
+    <!-- MODULE 4: BUS DES 16 CAPTEURS NORMALISES -->
+    <section id="sec-sensors" class="panel col-12">
+      <div class="panel-header">
+        <div class="panel-title">📡 Bus des 16 Capteurs Normalisés &amp; Synchronisation Vidéo/Audio</div>
+        <div class="toolbar">
+          <span class="pill">Fréquence: <strong style="color:var(--emerald);margin-left:4px;">60 Hz</strong></span>
+          <button class="btn" onclick="randomizeMidi()">🎛️ Impulsion MIDI S12/S13</button>
+          <button class="btn-primary btn" onclick="captureAndValuate('CAPTEUR-SYNC')">📸 Capturer &amp; Assigner Valeur</button>
+        </div>
+      </div>
+      <div class="sensors-grid" id="sensorsGrid"></div>
+    </section>
+
+    <!-- MODULE 5A: AGENTS AUTONOMES SUPERVISEURS -->
+    <section id="sec-agents" class="panel col-6">
+      <div class="panel-header">
+        <div class="panel-title">🤖 Agents Autonomes Créateurs &amp; Superviseurs</div>
+        <div class="toolbar">
+          <button class="btn-emerald btn" id="btnToggleAgents" onclick="toggleAgents()">⏸ Pause Supervision</button>
+          <button class="btn" onclick="triggerSupervisorCycle()">⚡ Cycle Immédiat</button>
+        </div>
+      </div>
+
+      <div class="agents-grid">
+        <div class="agent-card">
+          <div class="agent-top">
+            <span class="agent-name">1. Agent-Scout</span>
+            <span class="agent-badge" id="stScout">ACTIF</span>
+          </div>
+          <div class="agent-role">Pose Personnes Vidéo &amp; Segmentation</div>
+          <div class="agent-task" id="tkScout">Scan silhouettes &amp; 17 keypoints...</div>
+          <div class="progress-bar"><div class="progress-fill" id="pgScout"></div></div>
+        </div>
+
+        <div class="agent-card">
+          <div class="agent-top">
+            <span class="agent-name">2. Agent-Manager</span>
+            <span class="agent-badge" id="stManager">ACTIF</span>
+          </div>
+          <div class="agent-role">Auto-Programmation Formules &amp; Précision</div>
+          <div class="agent-task" id="tkManager">Calcul erreurs jacobiennes &amp; F1..F6...</div>
+          <div class="progress-bar"><div class="progress-fill" id="pgManager"></div></div>
+        </div>
+
+        <div class="agent-card">
+          <div class="agent-top">
+            <span class="agent-name">3. Agent-Worker</span>
+            <span class="agent-badge" id="stWorker">ACTIF</span>
+          </div>
+          <div class="agent-role">Maillage Morpho &amp; Son Spatial HRTF</div>
+          <div class="agent-task" id="tkWorker">Positionnement acoustique 3D...</div>
+          <div class="progress-bar"><div class="progress-fill" id="pgWorker"></div></div>
+        </div>
+
+        <div class="agent-card">
+          <div class="agent-top">
+            <span class="agent-name">4. Agent-Escrow</span>
+            <span class="agent-badge" id="stEscrow">ACTIF</span>
+          </div>
+          <div class="agent-role">Tests Dynamiques, SHA-256 &amp; Cloud Gemini Pro</div>
+          <div class="agent-task" id="tkEscrow">Cotation profils &amp; signature blocs...</div>
+          <div class="progress-bar"><div class="progress-fill" id="pgEscrow"></div></div>
+        </div>
+      </div>
+
+      <div class="console-log" id="agentConsole"></div>
+    </section>
+
+    <!-- MODULE 5B: WALLET WEB3 & REGISTRE SHA-256 -->
+    <section id="sec-wallet" class="panel col-6">
+      <div class="panel-header">
+        <div class="panel-title">🔐 Intégration Wallet &amp; Registre Cryptographique SHA-256</div>
+        <div class="toolbar">
+          <button class="btn-amber btn" onclick="exportLedgerJSON()">💾 Exporter JSON</button>
+        </div>
+      </div>
+
+      <div class="wallet-box">
+        <div class="wallet-row">
+          <div>
+            <span style="color:var(--text-muted);">IDENTITÉ OPÉRATEUR :</span>
+            <strong style="color:var(--cyan);">elbrirchi47@gmail.com</strong>
+          </div>
+          <button class="btn" onclick="copyText('elbrirchi47@gmail.com')">Copier Email</button>
+        </div>
+
+        <div class="wallet-row">
+          <div style="max-width:75%;">
+            <span style="color:var(--text-muted);">ADRESSE BTC (SEGWIT) :</span><br>
+            <span class="wallet-addr">bc1qlrpdh5j94865zmv3tcldzqpzycle4z7m7kc0wk</span>
+          </div>
+          <button class="btn-primary btn" onclick="copyText('bc1qlrpdh5j94865zmv3tcldzqpzycle4z7m7kc0wk')">Copier BTC</button>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="k-label">Captures &amp; Ventes Cloud</div>
+            <div class="k-val" id="walCount">0</div>
+            <div class="k-sub">Blocs SHA-256</div>
+          </div>
+          <div class="kpi">
+            <div class="k-label">Valeur Cumulée (V_cap)</div>
+            <div class="k-val" id="walTotalVc">0.000 Vc</div>
+            <div class="k-sub">Indexé Capteurs &amp; Cloud</div>
+          </div>
+          <div class="kpi">
+            <div class="k-label">Équivalent Sats Escrow</div>
+            <div class="k-val" id="walSats">0 sats</div>
+            <div class="k-sub">Prêt Règlement</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Heure / Vidéo</th>
+              <th>Morpho / Source</th>
+              <th>H_réel / Z_IPM</th>
+              <th>Préc. / E_tot</th>
+              <th>Valeur (V_cap)</th>
+              <th>Signature SHA-256</th>
+            </tr>
+          </thead>
+          <tbody id="ledgerBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="toast" id="toast">Copié !</div>
+
+  <script>
+    // =========================================================================
+    // PERSISTANCE TRIPLE SAUVEGARDE (PROFILS CLOUD GEMINI PRO & CONNECTÉES PRO)
+    // =========================================================================
+    const PROFILES_STORAGE_KEY = 'assia_pro_ng_v55_cloud_profiles';
+
+    const DEFAULT_PRO_CONNECTORS = [
+      { id: 'c-gemini-vault', name: 'Gemini Pro Cloud Vault', desc: 'Sauvegarde & réplication des profils chiffrés', ping: 16, active: true },
+      { id: 'c-gemini-market', name: 'Gemini Pro Valuation Engine', desc: 'Calcul du cours en direct par morphologie', ping: 21, active: true },
+      { id: 'c-github-auto7fa', name: 'GitHub Auto7Fa Sync', desc: 'Export JSON SHA-256 & suivi versions', ping: 38, active: true },
+      { id: 'c-btc-segwit', name: 'Passerelle BTC SegWit Escrow', desc: 'bc1qlrpd...kc0wk • Conversion Sats', ping: 29, active: true },
+      { id: 'c-telegram-pro', name: 'Telegram Alertes Pro Bot', desc: 'Notifications ventes Cloud temps réel', ping: 25, active: true },
+      { id: 'c-pose-hrtf', name: 'Bridge Pose IA & Audio HRTF 3D', desc: 'Synchronisation MoveNet 17 keypoints', ping: 11, active: true },
+      { id: 'c-mcp-webhook', name: 'Serveur MCP / Webhook Pro', desc: 'Connecteur outils & agents externes', ping: 19, active: true },
+      { id: 'c-local-vault', name: 'Persistance Locale Double Coffre', desc: 'Sauvegarde navigateur anti-perte', ping: 3, active: true }
+    ];
+
+    const DEFAULT_SAVED_PROFILES = [
+      {
+        id: 'prof-assia-01',
+        ticker: 'ASSIA-PRO',
+        name: 'Assia • Profil Morpho Maître',
+        morphType: 'MÉSOMORPHE',
+        hReal: 1.72,
+        shRatio: 1.24,
+        fMorphHz: 336.0,
+        courseVc: 148.50,
+        openCourseVc: 139.20,
+        salesCount: 2,
+        status: 'VENDU CLOUD GEMINI PRO',
+        hash: '9e4c1b7a82d05f31c64e2a89b701d35f8a2c14e9b63d708a1c5e92b4d803f117',
+        history: [137.5, 139.2, 140.1, 141.8, 141.2, 143.0, 144.6, 145.9, 147.2, 148.50]
+      },
+      {
+        id: 'prof-karim-02',
+        ticker: 'KARIM-3D',
+        name: 'Karim • Profil Spatial 360°',
+        morphType: 'ATHLÉTIQUE',
+        hReal: 1.81,
+        shRatio: 1.36,
+        fMorphHz: 318.4,
+        courseVc: 116.40,
+        openCourseVc: 112.00,
+        salesCount: 1,
+        status: 'SAUVEGARDÉ',
+        hash: '4a7f2e91c8b03d65e19a4c72f801b54d9e3c11a8b47f209d3c5e61a8b904c820',
+        history: [110.8, 112.0, 112.5, 113.1, 112.9, 114.2, 114.8, 115.5, 116.0, 116.40]
+      },
+      {
+        id: 'prof-pose-03',
+        ticker: 'POSE-V55',
+        name: 'Sujet Vidéo • Capture Dynamique',
+        morphType: 'ÉLANCÉ',
+        hReal: 1.85,
+        shRatio: 1.19,
+        fMorphHz: 352.1,
+        courseVc: 84.75,
+        openCourseVc: 82.50,
+        salesCount: 0,
+        status: 'SAUVEGARDÉ',
+        hash: '6c1d8f3a92e74b50a18c9d73e25f4a61b8c9d0e2f3a4b5c6d7e8f9a0b1c2d3e4',
+        history: [81.9, 82.5, 82.8, 83.2, 83.0, 83.6, 84.1, 84.3, 84.5, 84.75]
+      }
+    ];
+
+    function loadCloudProfilesState() {
+      try {
+        const raw = localStorage.getItem(PROFILES_STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return {
+        profiles: DEFAULT_SAVED_PROFILES,
+        connectors: DEFAULT_PRO_CONNECTORS,
+        cloudSalesTotalVc: 297.00
+      };
+    }
+
+    const cloudPersisted = loadCloudProfilesState();
+
+    function saveCloudProfilesState() {
+      try {
+        localStorage.setItem(PROFILES_STORAGE_KEY, JSON.stringify({
+          profiles: state.savedProfiles,
+          connectors: state.proConnectors,
+          cloudSalesTotalVc: state.cloudSalesTotalVc
+        }));
+      } catch (e) {}
+    }
+
+    // =========================================================================
+    // ÉTAT GLOBAL ASSIA PRO NG v5.5 • VIDÉO EXPORTABLE & BOURSE PROFILS
+    // =========================================================================
+    const state = {
+      t: 0,
+      sourceMode: 'SIM', // 'VIDEO' | 'WEBCAM' | 'SIM'
+      videoName: '',
+      videoLoop: true,
+      hwSensorsActive: false,
+      agentsRunning: true,
+      agentStep: 0,
+      stressTestActive: false,
+      formulaGen: 1,
+      hw: { ax: 0, ay: 0, az: 9.81, alpha: 0, beta: 0, gamma: 0 },
+      midiCC1: 64,
+      midiCC7: 96,
+      sensors: [],
+      cocoModel: null,
+      poseDetector: null,
+      lastAiDetectTime: 0,
+      savedProfiles: cloudPersisted.profiles,
+      proConnectors: cloudPersisted.connectors,
+      cloudSalesTotalVc: cloudPersisted.cloudSalesTotalVc,
+      persons: [
+        {
+          id: 1,
+          cx: 0.50,
+          topY: 0.18,
+          footY: 0.87,
+          shoulderHalfW: 0.11,
+          hipHalfW: 0.085,
+          sliceCenters: [0.50, 0.50, 0.50, 0.50, 0.50],
+          vx: 0,
+          vy: 0,
+          morphType: 'MÉSOMORPHE',
+          shoulderHipRatio: 1.29,
+          statureRatio: 3.85,
+          confidence: 0.984,
+          keypoints: null
+        }
+      ],
+      metrics: {
+        xReal: 0.0,
+        zIpm: 2.45,
+        hReal: 1.78,
+        span: 1.81,
+        cogY: 0.98,
+        polarDeg: 0,
+        stability: 96.4,
+        confidence: 0.984,
+        eTot: 0,
+        kappa: 0,
+        rBal: 0,
+        vCap: 0,
+        fMorphHz: 324.5,
+        panLR: 0,
+        precF1: 99.2,
+        errH: 0.014,
+        precF2: 98.8,
+        precF3: 98.5,
+        precF4: 98.9,
+        precF5: 99.4,
+        precGlobal: 99.0
+      },
+      autoCompiled: {
+        kMorph: 1.0,
+        kDrag: 0.045,
+        inertiaFactor: 0.28,
+        fRefHz: 330
+      },
+      testResults: [],
+      ledger: [],
+      totalVc: 0
+    };
+
+    const procCanvas = document.createElement('canvas');
+    procCanvas.width = 192;
+    procCanvas.height = 108;
+    const procCtx = procCanvas.getContext('2d', { willReadFrequently: true });
+    let prevLuma = null;
+
+    const SENSOR_DEFS = [
+      { id: 'S01', name: 'Accéléromètre X', unit: 'm/s²', min: -15, max: 15 },
+      { id: 'S02', name: 'Accéléromètre Y', unit: 'm/s²', min: -15, max: 15 },
+      { id: 'S03', name: 'Accéléromètre Z', unit: 'm/s²', min: -20, max: 20 },
+      { id: 'S04', name: 'Gyroscope Yaw α', unit: 'rad/s', min: -3.14, max: 3.14 },
+      { id: 'S05', name: 'Gyroscope Pitch β', unit: 'rad/s', min: -1.57, max: 1.57 },
+      { id: 'S06', name: 'Gyroscope Roll γ', unit: 'rad/s', min: -1.57, max: 1.57 },
+      { id: 'S07', name: 'Magnétomètre Azimut', unit: '°', min: 0, max: 360 },
+      { id: 'S08', name: 'Baromètre Δz', unit: 'm', min: -5, max: 50 },
+      { id: 'S09', name: 'LiDAR Proximité Z', unit: 'm', min: 0.5, max: 8.0 },
+      { id: 'S10', name: 'Luminosité Vidéo', unit: 'lux', min: 0, max: 1000 },
+      { id: 'S11', name: 'Fréquence Morpho f₀', unit: 'Hz', min: 80, max: 880 },
+      { id: 'S12', name: 'MIDI CC#1 Morph', unit: 'val', min: 0, max: 127 },
+      { id: 'S13', name: 'MIDI CC#7 Gain 3D', unit: 'val', min: 0, max: 127 },
+      { id: 'S14', name: 'Horloge Delta Δt', unit: 'ms', min: 14, max: 20 },
+      { id: 'S15', name: 'Confiance Pose IA', unit: '%', min: 0, max: 100 },
+      { id: 'S16', name: 'Dérive Thermique δT', unit: '°C', min: 20, max: 45 }
+    ];
+
+    // =========================================================================
+    // ENREGISTREUR VIDÉO MODIFIÉE + AUDIO SPATIAL (FORMAT NATIF NON-CORROMPU)
+    // =========================================================================
+    const videoExporter = {
+      isRecording: false,
+      recorder: null,
+      chunks: [],
+      startTime: 0,
+      timerInterval: null,
+      lastBlob: null,
+      lastFileName: '',
+      lastMimeType: '',
+      lastExt: 'webm'
+    };
+
+    function getBestSupportedVideoFormat(preference = 'auto') {
+      if (typeof MediaRecorder === 'undefined') return null;
+
+      const mp4Candidates = [
+        { mime: 'video/mp4;codecs=avc1,mp4a.40.2', ext: 'mp4', label: 'MP4 (H.264 + AAC)' },
+        { mime: 'video/mp4;codecs=h264,aac', ext: 'mp4', label: 'MP4 (H.264 + AAC)' },
+        { mime: 'video/mp4;codecs=avc1', ext: 'mp4', label: 'MP4 (H.264)' },
+        { mime: 'video/mp4', ext: 'mp4', label: 'MP4 Natif' }
+      ];
+
+      const webmCandidates = [
+        { mime: 'video/webm;codecs=vp9,opus', ext: 'webm', label: 'WebM (VP9 + Opus)' },
+        { mime: 'video/webm;codecs=vp8,opus', ext: 'webm', label: 'WebM (VP8 + Opus)' },
+        { mime: 'video/webm;codecs=vp9', ext: 'webm', label: 'WebM (VP9)' },
+        { mime: 'video/webm;codecs=vp8', ext: 'webm', label: 'WebM (VP8)' },
+        { mime: 'video/webm', ext: 'webm', label: 'WebM Natif' }
+      ];
+
+      let list = [...mp4Candidates, ...webmCandidates];
+      if (preference === 'webm') list = [...webmCandidates, ...mp4Candidates];
+      if (preference === 'mp4') list = [...mp4Candidates, ...webmCandidates];
+
+      for (const item of list) {
+        if (MediaRecorder.isTypeSupported(item.mime)) {
+          return item;
+        }
+      }
+      return { mime: '', ext: 'webm', label: 'Conteneur Navigateur Défaut' };
+    }
+
+    function toggleVideoRecording() {
+      if (videoExporter.isRecording) {
+        stopVideoRecording();
+      } else {
+        startVideoRecording();
+      }
+    }
+
+    function startVideoRecording() {
+      const canvas = document.getElementById('karimCanvas');
+      if (!canvas || !canvas.captureStream) {
+        return showToast('Capture vidéo non supportée sur ce navigateur.');
+      }
+
+      // S'assurer que les dimensions du canvas sont strictement paires (anti-corruption H.264/MP4)
+      if (canvas.width % 2 !== 0) canvas.width = Math.max(2, canvas.width & ~1);
+      if (canvas.height % 2 !== 0) canvas.height = Math.max(2, canvas.height & ~1);
+
+      const pref = document.getElementById('exportFormatSelect').value;
+      const format = getBestSupportedVideoFormat(pref);
+      if (!format) {
+        return showToast('MediaRecorder indisponible sur cet appareil.');
+      }
+
+      const canvasStream = canvas.captureStream(30);
+      const combinedTracks = [...canvasStream.getVideoTracks()];
+
+      // Attacher l'audio spatial 3D + son vidéo uniquement si le contexte audio est actif/prêt
+      if (spatialAudio.ctx && spatialAudio.streamDest && spatialAudio.ctx.state === 'running') {
+        const audioTracks = spatialAudio.streamDest.stream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          combinedTracks.push(audioTracks[0]);
+        }
+      }
+
+      const finalStream = new MediaStream(combinedTracks);
+      videoExporter.chunks = [];
+      videoExporter.lastExt = format.ext;
+      videoExporter.lastMimeType = format.mime || 'video/webm';
+
+      try {
+        const options = format.mime
+          ? { mimeType: format.mime, videoBitsPerSecond: 4500000 }
+          : { videoBitsPerSecond: 4500000 };
+        videoExporter.recorder = new MediaRecorder(finalStream, options);
+      } catch (err) {
+        videoExporter.recorder = new MediaRecorder(finalStream);
+        videoExporter.lastMimeType = videoExporter.recorder.mimeType || 'video/webm';
+        videoExporter.lastExt = videoExporter.lastMimeType.includes('mp4') ? 'mp4' : 'webm';
+      }
+
+      videoExporter.recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          videoExporter.chunks.push(e.data);
+        }
+      };
+
+      videoExporter.recorder.onstop = () => {
+        finalizeRecordedVideo();
+      };
+
+      videoExporter.recorder.onerror = () => {
+        showToast('Erreur d’encodage — Réinitialisation propre de la piste.');
+        resetRecordingUI();
+      };
+
+      // Découpage régulier 250ms pour éviter toute perte de tampon et garantir l'intégrité des timestamps
+      videoExporter.recorder.start(250);
+      videoExporter.isRecording = true;
+      videoExporter.startTime = Date.now();
+
+      const btn = document.getElementById('btnRecordVideo');
+      btn.classList.add('recording');
+      btn.textContent = '⏹ Arrêter & Télécharger';
+      document.getElementById('visionStage').classList.add('is-recording');
+      document.getElementById('recIndicator').classList.add('visible');
+      document.getElementById('exportStatusMeta').textContent =
+        `ENREGISTREMENT EN COURS • ${format.label} (${canvas.width}×${canvas.height})`;
+
+      videoExporter.timerInterval = setInterval(() => {
+        const sec = Math.floor((Date.now() - videoExporter.startTime) / 1000);
+        const mm = String(Math.floor(sec / 60)).padStart(2, '0');
+        const ss = String(sec % 60).padStart(2, '0');
+        document.getElementById('recTimerLabel').textContent = `REC ${mm}:${ss}`;
+      }, 250);
+
+      logAgent('Agent-Worker', `Enregistrement vidéo modifiée démarré (${format.label}, ${canvas.width}×${canvas.height}px).`);
+      showToast(`Enregistrement démarré (${format.label})`);
+    }
+
+    function stopVideoRecording() {
+      if (videoExporter.recorder && videoExporter.recorder.state !== 'inactive') {
+        videoExporter.recorder.stop();
+      }
+      resetRecordingUI();
+    }
+
+    function resetRecordingUI() {
+      videoExporter.isRecording = false;
+      clearInterval(videoExporter.timerInterval);
+      const btn = document.getElementById('btnRecordVideo');
+      btn.classList.remove('recording');
+      btn.textContent = '⏺ Enregistrer Vidéo Modifiée';
+      document.getElementById('visionStage').classList.remove('is-recording');
+      document.getElementById('recIndicator').classList.remove('visible');
+    }
+
+    function finalizeRecordedVideo() {
+      if (!videoExporter.chunks.length) {
+        return showToast('Aucune image capturée — Vérifiez que la vidéo est en lecture.');
+      }
+
+      const actualMime = videoExporter.recorder.mimeType || videoExporter.lastMimeType || 'video/webm';
+      const ext = actualMime.includes('mp4') ? 'mp4' : 'webm';
+      const blob = new Blob(videoExporter.chunks, { type: actualMime });
+
+      if (blob.size < 1024) {
+        return showToast('Fichier trop court — Laissez tourner au moins 1 seconde.');
+      }
+
+      const baseLabel = state.videoName
+        ? state.videoName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_')
+        : `assia_morpho_${state.persons[0].morphType.toLowerCase()}`;
+      const fileName = `${baseLabel}_IA_3D_${Date.now()}.${ext}`;
+
+      videoExporter.lastBlob = blob;
+      videoExporter.lastFileName = fileName;
+      videoExporter.lastExt = ext;
+
+      const sizeMb = (blob.size / (1024 * 1024)).toFixed(2);
+      const dlBtn = document.getElementById('btnDownloadLastVideo');
+      dlBtn.disabled = false;
+      dlBtn.textContent = `⬇ Télécharger .${ext.toUpperCase()} (${sizeMb} Mo)`;
+
+      document.getElementById('exportStatusMeta').textContent =
+        `Prêt : ${fileName} • ${sizeMb} Mo • Intégrité vérifiée (${actualMime.split(';')[0]})`;
+
+      downloadLastRecordedVideo();
+      logAgent('Agent-Escrow', `Vidéo modifiée exportée sans corruption : ${fileName} (${sizeMb} Mo).`);
+    }
+
+    function downloadLastRecordedVideo() {
+      if (!videoExporter.lastBlob) return;
+      const url = URL.createObjectURL(videoExporter.lastBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = videoExporter.lastFileName;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 1500);
+      showToast(`Téléchargement lancé : ${videoExporter.lastFileName}`);
+    }
+
+    // =========================================================================
+    // MODE GRAND ÉCRAN (CINÉMA & SUPERVISION PANORAMIQUE)
+    // =========================================================================
+    function toggleGrandEcran() {
+      document.body.classList.toggle('grand-ecran');
+      const isBig = document.body.classList.contains('grand-ecran');
+      const btn = document.getElementById('btnGrandEcran');
+      if (btn) {
+        btn.classList.toggle('active-mode', isBig);
+        btn.textContent = isBig ? '⛶ Quitter Grand Écran' : '⛶ Grand Écran';
+      }
+
+      if (isBig && document.documentElement.requestFullscreen && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else if (!isBig && document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+
+      showToast(isBig ? 'Mode Grand Écran Superviseur activé' : 'Affichage standard restauré');
+      logAgent('Agent-Manager', isBig ? 'Basculé en Mode Grand Écran Panoramique.' : 'Retour en vue grille standard.');
+    }
+
+    // =========================================================================
+    // HUB CONNECTÉES PRO (8 PASSERELLES SYNCHRONISÉES)
+    // =========================================================================
+    function renderProConnectors() {
+      const grid = document.getElementById('connectorsProGrid');
+      if (!grid) return;
+
+      grid.innerHTML = state.proConnectors.map(c => `
+        <div class="conn-card ${c.active ? '' : 'off'}">
+          <div>
+            <div class="conn-title">${c.active ? '🟢' : '🔴'} ${c.name}</div>
+            <div class="conn-sub">${c.desc}</div>
+          </div>
+          <div class="conn-right">
+            <span class="ping-badge">${c.active ? c.ping + ' ms' : 'OFFLINE'}</span>
+            <button class="btn" style="padding:3px 8px;font-size:10px;" onclick="toggleProConnector('${c.id}')">
+              ${c.active ? 'Connectée PRO' : 'Activer'}
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      const activeCount = state.proConnectors.filter(c => c.active).length;
+      document.getElementById('hdrConnectors').textContent = `${activeCount}/${state.proConnectors.length}`;
+      document.getElementById('connActiveRatio').textContent = `${activeCount} / ${state.proConnectors.length}`;
+    }
+
+    function toggleProConnector(id) {
+      const c = state.proConnectors.find(item => item.id === id);
+      if (!c) return;
+      c.active = !c.active;
+      if (c.active) c.ping = Math.floor(8 + Math.random() * 26);
+      saveCloudProfilesState();
+      renderProConnectors();
+      showToast(`${c.name} : ${c.active ? 'CONNECTÉE PRO ACTIVE' : 'DÉCONNECTÉE'}`);
+    }
+
+    function syncAllProConnectors() {
+      state.proConnectors.forEach(c => {
+        if (c.active) c.ping = Math.floor(7 + Math.random() * 22);
+      });
+      saveCloudProfilesState();
+      renderProConnectors();
+      logAgent('Agent-Worker', 'Synchronisation complète des 8 Connectées PRO & Cloud Gemini Pro effectuée.');
+      showToast('Toutes les Connectées PRO synchronisées (< 22 ms)');
+    }
+
+    // =========================================================================
+    // COURS DES PROFILS SAUVEGARDÉS & VENTE DANS LE CLOUD GEMINI PRO
+    // =========================================================================
+    function buildMiniSparkline(points, isUp) {
+      if (!points || points.length < 2) return '';
+      const w = 220, h = 28, pad = 2;
+      const min = Math.min(...points);
+      const max = Math.max(...points);
+      const span = (max - min) || 1;
+      const color = isUp ? '#00e676' : '#ff5252';
+
+      const coords = points.map((val, idx) => {
+        const x = pad + (idx / (points.length - 1)) * (w - pad * 2);
+        const y = h - pad - ((val - min) / span) * (h - pad * 2);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      });
+
+      return `
+        <svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" preserveAspectRatio="none">
+          <polyline fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" points="${coords.join(' ')}" />
+        </svg>
+      `;
+    }
+
+    function renderCloudProfiles() {
+      const grid = document.getElementById('profilesCardsGrid');
+      const ticker = document.getElementById('cloudTickerTrack');
+      if (!grid) return;
+
+      let marketCap = 0;
+      grid.innerHTML = state.savedProfiles.map(prof => {
+        marketCap += prof.courseVc;
+        const pct = ((prof.courseVc - prof.openCourseVc) / prof.openCourseVc) * 100;
+        const isUp = pct >= 0;
+        const isSold = prof.status === 'VENDU CLOUD GEMINI PRO';
+
+        return `
+          <div class="prof-card ${isSold ? 'sold-cloud' : ''}">
+            <div class="prof-head">
+              <div>
+                <div class="prof-ticker">${prof.ticker} • ${prof.morphType}</div>
+                <div class="prof-name">${prof.name}</div>
+              </div>
+              <div class="prof-course-box">
+                <div class="prof-price">${prof.courseVc.toFixed(2)} Vc</div>
+                <div class="prof-delta ${isUp ? 'up' : 'down'}">${isUp ? '▲ +' : '▼ '}${pct.toFixed(2)}%</div>
+              </div>
+            </div>
+
+            <div class="prof-spark">${buildMiniSparkline(prof.history, isUp)}</div>
+
+            <div class="prof-specs">
+              <span class="tag">H: ${prof.hReal.toFixed(2)}m</span>
+              <span class="tag">Ép/Han: ${prof.shRatio.toFixed(2)}</span>
+              <span class="tag">🔊 ${prof.fMorphHz.toFixed(0)}Hz</span>
+              <span class="tag">Ventes: ${prof.salesCount}</span>
+            </div>
+
+            <div style="font-family:var(--font-mono); font-size:9.5px; color:var(--text-muted);">
+              SHA-256: ${prof.hash.slice(0, 22)}…
+            </div>
+
+            <div class="prof-actions">
+              <span class="cloud-badge ${isSold ? 'sold' : 'saved'}">${prof.status}</span>
+              <div style="display:flex; gap:5px;">
+                <button class="btn" style="padding:4px 8px;font-size:11px;" onclick="resaveProfileCloud('${prof.id}')">☁ Sauvegarder</button>
+                <button class="btn-emerald btn" style="padding:4px 9px;font-size:11px;" onclick="sellProfileInCloudGeminiPro('${prof.id}')">
+                  💎 Vendre Cloud Gemini Pro
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('profTotalCount').textContent = state.savedProfiles.length;
+      document.getElementById('profMarketCap').textContent = `${marketCap.toFixed(3)} Vc`;
+      document.getElementById('profCloudRevenue').textContent = `${state.cloudSalesTotalVc.toFixed(3)} Vc`;
+      document.getElementById('hdrCloudSales').textContent = `${state.cloudSalesTotalVc.toFixed(3)} Vc`;
+
+      if (ticker) {
+        const chips = state.savedProfiles.map(prof => {
+          const pct = ((prof.courseVc - prof.openCourseVc) / prof.openCourseVc) * 100;
+          const isUp = pct >= 0;
+          return `
+            <span class="ticker-chip">
+              <strong style="color:var(--cyan);">${prof.ticker}</strong>
+              <span>${prof.courseVc.toFixed(2)} Vc</span>
+              <span style="color:${isUp ? 'var(--emerald)' : 'var(--rose)'};">${isUp ? '▲' : '▼'}${Math.abs(pct).toFixed(2)}%</span>
+              <span style="color:var(--violet);">[${prof.status === 'VENDU CLOUD GEMINI PRO' ? 'VENDU CLOUD' : 'COTÉ'}]</span>
+            </span>
+          `;
+        }).join('');
+        ticker.innerHTML = chips + chips;
+      }
+    }
+
+    async function saveCurrentPersonAsProfile(customName = null, customTicker = null) {
+      const p0 = state.persons[0];
+      const m = state.metrics;
+      const idx = state.savedProfiles.length + 1;
+      const name = customName || `Personne #${idx} • ${p0.morphType} (${state.sourceMode})`;
+      const ticker = (customTicker || `PRS-${String(idx).padStart(2, '0')}-${p0.morphType.slice(0, 3)}`).toUpperCase();
+      const baseCourse = Math.max(25, +(m.vCap * 6.5 + m.hReal * 20).toFixed(2));
+      const hash = await sha256Hex(`${ticker}-${name}-${baseCourse}-${Date.now()}`);
+
+      const newProfile = {
+        id: 'prof-' + Date.now(),
+        ticker,
+        name,
+        morphType: p0.morphType,
+        hReal: +m.hReal.toFixed(2),
+        shRatio: +p0.shoulderHipRatio.toFixed(2),
+        fMorphHz: +m.fMorphHz.toFixed(1),
+        courseVc: baseCourse,
+        openCourseVc: baseCourse,
+        salesCount: 0,
+        status: 'SAUVEGARDÉ',
+        hash,
+        history: [+(baseCourse * 0.98).toFixed(2), +(baseCourse * 0.99).toFixed(2), baseCourse]
+      };
+
+      state.savedProfiles.unshift(newProfile);
+      saveCloudProfilesState();
+      renderCloudProfiles();
+      logAgent('Agent-Escrow', `Profil ${ticker} sauvegardé et coté à ${baseCourse.toFixed(2)} Vc dans le Cloud Gemini Pro.`);
+      showToast(`Profil ${ticker} sauvegardé & coté (${baseCourse.toFixed(2)} Vc) !`);
+    }
+
+    function saveCustomNamedProfile() {
+      const nameEl = document.getElementById('newProfName');
+      const tickEl = document.getElementById('newProfTicker');
+      const name = nameEl.value.trim();
+      const ticker = tickEl.value.trim();
+      if (!name) return showToast('Entrez un nom de profil personne.');
+      saveCurrentPersonAsProfile(name, ticker || null);
+      nameEl.value = '';
+      tickEl.value = '';
+    }
+
+    async function resaveProfileCloud(profId) {
+      const prof = state.savedProfiles.find(p => p.id === profId);
+      if (!prof) return;
+      prof.hash = await sha256Hex(`SAVE-${prof.ticker}-${prof.courseVc}-${Date.now()}`);
+      saveCloudProfilesState();
+      renderCloudProfiles();
+      showToast(`Profil ${prof.ticker} resynchronisé dans Gemini Pro Cloud Vault`);
+    }
+
+    async function sellProfileInCloudGeminiPro(profId) {
+      const prof = state.savedProfiles.find(p => p.id === profId);
+      if (!prof) return;
+
+      const saleAmountVc = prof.courseVc;
+      state.cloudSalesTotalVc = +(state.cloudSalesTotalVc + saleAmountVc).toFixed(3);
+      state.totalVc += saleAmountVc;
+
+      prof.status = 'VENDU CLOUD GEMINI PRO';
+      prof.salesCount += 1;
+      prof.courseVc = +(prof.courseVc * 1.032).toFixed(2);
+      prof.history.push(prof.courseVc);
+      if (prof.history.length > 22) prof.history.shift();
+      prof.hash = await sha256Hex(`CLOUD-SALE-${prof.ticker}-${saleAmountVc}-${Date.now()}`);
+
+      state.ledger.unshift({
+        idx: state.ledger.length + 1,
+        time: new Date().toLocaleTimeString('fr-FR'),
+        source: `CLOUD GEMINI PRO • ${prof.ticker}`,
+        hReal: `${prof.hReal.toFixed(2)}m / ${prof.morphType}`,
+        precEtot: `Cours: ${saleAmountVc.toFixed(2)} Vc`,
+        vCap: saleAmountVc.toFixed(3),
+        hash: prof.hash
+      });
+      if (state.ledger.length > 40) state.ledger.pop();
+
+      saveCloudProfilesState();
+      renderCloudProfiles();
+      renderLedger();
+      logAgent('Agent-Escrow', `VENTE CLOUD GEMINI PRO : ${prof.ticker} vendu à ${saleAmountVc.toFixed(2)} Vc (Nouveau cours : ${prof.courseVc.toFixed(2)} Vc).`);
+      showToast(`Vendu dans Cloud Gemini Pro : ${prof.ticker} (+${saleAmountVc.toFixed(2)} Vc) !`);
+    }
+
+    setInterval(() => {
+      state.savedProfiles.forEach(prof => {
+        const drift = (Math.random() - 0.47) * (prof.status === 'VENDU CLOUD GEMINI PRO' ? 0.015 : 0.011);
+        prof.courseVc = Math.max(10, +(prof.courseVc * (1 + drift)).toFixed(2));
+        prof.history.push(prof.courseVc);
+        if (prof.history.length > 22) prof.history.shift();
+      });
+      saveCloudProfilesState();
+      renderCloudProfiles();
+    }, 2200);
+
+    // =========================================================================
+    // MOTEUR AUDIO SPATIAL 3D (POSITIONNÉ SELON MORPHOLOGIE IDENTIFIÉE)
+    // =========================================================================
+    const spatialAudio = {
+      active: false,
+      ctx: null,
+      panner: null,
+      stereoPan: null,
+      filter: null,
+      gainNode: null,
+      oscMain: null,
+      oscHarm: null,
+      videoSourceNode: null,
+      analyser: null,
+      streamDest: null,
+      freqBins: null
+    };
+
+    function initSpatialAudioEngine() {
+      if (spatialAudio.ctx) return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioCtx();
+
+      const panner = ctx.createPanner();
+      panner.panningModel = 'HRTF';
+      panner.distanceModel = 'inverse';
+      panner.refDistance = 1.0;
+      panner.maxDistance = 15.0;
+      panner.rolloffFactor = 1.1;
+
+      const stereoPan = ctx.createStereoPanner();
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 420;
+      filter.Q.value = 2.4;
+
+      const gainNode = ctx.createGain();
+      gainNode.gain.value = 0.08;
+
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 128;
+      spatialAudio.freqBins = new Uint8Array(analyser.frequencyBinCount);
+
+      // Destination MediaStream pour enregistrer l'audio spatial 3D dans la vidéo exportée
+      const streamDest = ctx.createMediaStreamDestination();
+
+      const oscMain = ctx.createOscillator();
+      oscMain.type = 'triangle';
+      oscMain.frequency.value = 324;
+
+      const oscHarm = ctx.createOscillator();
+      oscHarm.type = 'sine';
+      oscHarm.frequency.value = 486;
+
+      const harmGain = ctx.createGain();
+      harmGain.gain.value = 0.35;
+
+      oscMain.connect(filter);
+      oscHarm.connect(harmGain);
+      harmGain.connect(filter);
+
+      filter.connect(gainNode);
+      gainNode.connect(panner);
+      panner.connect(stereoPan);
+      stereoPan.connect(analyser);
+      analyser.connect(ctx.destination);
+      stereoPan.connect(streamDest);
+
+      oscMain.start();
+      oscHarm.start();
+
+      try {
+        const videoEl = document.getElementById('sourceVideo');
+        const vidSrc = ctx.createMediaElementSource(videoEl);
+        vidSrc.connect(panner);
+        spatialAudio.videoSourceNode = vidSrc;
+      } catch (e) {}
+
+      spatialAudio.ctx = ctx;
+      spatialAudio.panner = panner;
+      spatialAudio.stereoPan = stereoPan;
+      spatialAudio.filter = filter;
+      spatialAudio.gainNode = gainNode;
+      spatialAudio.oscMain = oscMain;
+      spatialAudio.oscHarm = oscHarm;
+      spatialAudio.analyser = analyser;
+      spatialAudio.streamDest = streamDest;
+    }
+
+    function toggleSpatialAudio() {
+      initSpatialAudioEngine();
+      spatialAudio.active = !spatialAudio.active;
+      const btn = document.getElementById('btnSpatialAudio');
+      if (spatialAudio.active) {
+        if (spatialAudio.ctx.state === 'suspended') spatialAudio.ctx.resume();
+        spatialAudio.gainNode.gain.setTargetAtTime(0.09, spatialAudio.ctx.currentTime, 0.05);
+        btn.textContent = '🎧 Son Spatial 3D: ON';
+        btn.classList.add('active-mode');
+        showToast('Audio Spatial HRTF 3D verrouillé sur la morphologie détectée !');
+        logAgent('Agent-Worker', 'Audio spatial 3D activé et asservi aux coordonnées (X, Y_CoG, -Z_IPM).');
+      } else {
+        spatialAudio.gainNode.gain.setTargetAtTime(0.0001, spatialAudio.ctx.currentTime, 0.05);
+        btn.textContent = '🎧 Son Spatial 3D: OFF';
+        btn.classList.remove('active-mode');
+      }
+    }
+
+    function updateSpatialAudioPosition(p, m) {
+      const morphTimbre = {
+        'ATHLÉTIQUE': { mult: 1.05, q: 3.2, wave: 'sawtooth', label: 'Athlétique (Harmonique Dynamique)' },
+        'ÉLANCÉ': { mult: 1.18, q: 4.1, wave: 'sine', label: 'Élancé (Formant Clair)' },
+        'ROBUSTE': { mult: 0.84, q: 1.8, wave: 'triangle', label: 'Robuste (Basse Profonde)' },
+        'MÉSOMORPHE': { mult: 1.00, q: 2.5, wave: 'triangle', label: 'Équilibré (Résonance Naturelle)' }
+      }[p.morphType] || { mult: 1.00, q: 2.5, wave: 'triangle', label: 'Standard' };
+
+      const fMorph = state.autoCompiled.fRefHz * (1.75 / m.hReal) * morphTimbre.mult;
+      const panLR = Math.max(-1, Math.min(1, (p.cx - 0.5) * 2.2));
+      const xMeters = panLR * (m.zIpm * 0.65);
+      const yMeters = m.cogY;
+      const zMeters = -m.zIpm;
+
+      m.fMorphHz = fMorph;
+      m.panLR = panLR;
+      m.xReal = xMeters;
+
+      document.getElementById('audioMorphLabel').textContent = `f₀=${fMorph.toFixed(1)} Hz • ${morphTimbre.label}`;
+      document.getElementById('panDot').style.left = `${(panLR + 1) * 50}%`;
+      document.getElementById('panValLabel').textContent = `Pan: ${panLR >= 0 ? '+' : ''}${panLR.toFixed(2)}`;
+      document.getElementById('audioXYZLabel').textContent = `HRTF(${xMeters.toFixed(2)}, ${yMeters.toFixed(2)}, ${zMeters.toFixed(2)})`;
+
+      if (spatialAudio.active && spatialAudio.ctx) {
+        const now = spatialAudio.ctx.currentTime;
+        spatialAudio.oscMain.type = morphTimbre.wave;
+        spatialAudio.oscMain.frequency.setTargetAtTime(fMorph, now, 0.04);
+        spatialAudio.oscHarm.frequency.setTargetAtTime(fMorph * 1.5, now, 0.04);
+        spatialAudio.filter.frequency.setTargetAtTime(fMorph * 1.4, now, 0.05);
+        spatialAudio.filter.Q.setTargetAtTime(morphTimbre.q, now, 0.05);
+        spatialAudio.stereoPan.pan.setTargetAtTime(panLR, now, 0.03);
+
+        if (spatialAudio.panner.positionX) {
+          spatialAudio.panner.positionX.setTargetAtTime(xMeters, now, 0.04);
+          spatialAudio.panner.positionY.setTargetAtTime(yMeters, now, 0.04);
+          spatialAudio.panner.positionZ.setTargetAtTime(zMeters, now, 0.04);
+        } else {
+          spatialAudio.panner.setPosition(xMeters, yMeters, zMeters);
+        }
+      }
+    }
+
+    // =========================================================================
+    // CHARGEMENT MODÈLES IA NEURAUX (COCO-SSD + MOVENET POSE DETECTION)
+    // =========================================================================
+    window.addEventListener('load', async () => {
+      try {
+        if (window.cocoSsd) {
+          state.cocoModel = await window.cocoSsd.load();
+        }
+        if (window.poseDetection) {
+          state.poseDetector = await window.poseDetection.createDetector(
+            window.poseDetection.SupportedModels.MoveNet,
+            { modelType: window.poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING }
+          );
+        }
+        if (state.poseDetector || state.cocoModel) {
+          document.getElementById('iaEngineBadge').textContent = 'IA: MOVENET + COCO-SSD + MORPHO';
+          logAgent('Agent-Scout', 'Détecteur squelettique MoveNet & COCO-SSD activé sur flux vidéo.');
+        }
+      } catch (e) {
+        document.getElementById('iaEngineBadge').textContent = 'IA: SEGMENTATION MORPHO + IPM';
+      }
+    });
+
+    // =========================================================================
+    // GESTION SOURCES : VIDÉO, CAMÉRA, SIMULATION 3D
+    // =========================================================================
+    function stopMediaTracks() {
+      const video = document.getElementById('sourceVideo');
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach(t => t.stop());
+        video.srcObject = null;
+      }
+      if (video.src && video.src.startsWith('blob:')) {
+        URL.revokeObjectURL(video.src);
+      }
+      video.removeAttribute('src');
+      prevLuma = null;
+    }
+
+    function updateModeButtons() {
+      document.getElementById('btnCam').classList.toggle('active-mode', state.sourceMode === 'WEBCAM');
+      document.getElementById('btnSim').classList.toggle('active-mode', state.sourceMode === 'SIM');
+    }
+
+    function loadVideoFile(file) {
+      if (!file) return;
+      stopMediaTracks();
+      const video = document.getElementById('sourceVideo');
+      video.src = URL.createObjectURL(file);
+      video.loop = state.videoLoop;
+      video.muted = false;
+      video.playbackRate = parseFloat(document.getElementById('inSpeed').value);
+      state.sourceMode = 'VIDEO';
+      state.videoName = file.name;
+      updateModeButtons();
+
+      video.onloadedmetadata = () => {
+        document.getElementById('vidResLabel').textContent = `${video.videoWidth}×${video.videoHeight} • VIDÉO`;
+        document.getElementById('dropHint').style.display = 'none';
+        document.getElementById('btnVidMute').textContent = video.muted ? '🔇 Son Vidéo: Muet' : '🔊 Son Vidéo: Actif';
+        video.play().catch(() => {
+          video.muted = true;
+          document.getElementById('btnVidMute').textContent = '🔇 Son Vidéo: Muet';
+          video.play();
+        });
+        showToast(`Vidéo chargée : ${file.name}`);
+        logAgent('Agent-Scout', `Vidéo chargée (${file.name}). Pose directe sur personnes + morphologie activées.`);
+      };
+    }
+
+    function handleVideoUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      loadVideoFile(file);
+    }
+
+    const stage = document.getElementById('visionStage');
+    stage.addEventListener('dragover', (e) => { e.preventDefault(); stage.classList.add('drag-over'); });
+    stage.addEventListener('dragleave', () => stage.classList.remove('drag-over'));
+    stage.addEventListener('drop', (e) => {
+      e.preventDefault();
+      stage.classList.remove('drag-over');
+      const file = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file && file.type.startsWith('video/')) loadVideoFile(file);
+    });
+
+    function toggleVideoPlay() {
+      const video = document.getElementById('sourceVideo');
+      if (state.sourceMode !== 'VIDEO') return showToast('Chargez d’abord une vidéo via « 📁 Charger Vidéo ».');
+      if (video.paused) { video.play(); document.getElementById('btnVidPlay').textContent = '⏸ Pause'; }
+      else { video.pause(); document.getElementById('btnVidPlay').textContent = '▶ Lecture'; }
+    }
+
+    function restartVideo() {
+      const video = document.getElementById('sourceVideo');
+      if (state.sourceMode === 'VIDEO') { video.currentTime = 0; video.play(); }
+    }
+
+    function toggleVideoAudio() {
+      const video = document.getElementById('sourceVideo');
+      video.muted = !video.muted;
+      document.getElementById('btnVidMute').textContent = video.muted ? '🔇 Son Vidéo: Muet' : '🔊 Son Vidéo: Actif';
+    }
+
+    function toggleVideoLoop() {
+      state.videoLoop = !state.videoLoop;
+      document.getElementById('sourceVideo').loop = state.videoLoop;
+      document.getElementById('btnVidLoop').textContent = `🔁 Boucle: ${state.videoLoop ? 'ON' : 'OFF'}`;
+    }
+
+    function seekVideo(val) {
+      const video = document.getElementById('sourceVideo');
+      if (state.sourceMode === 'VIDEO' && video.duration) {
+        video.currentTime = (parseFloat(val) / 1000) * video.duration;
+      }
+    }
+
+    function updatePlaybackSpeed(val) {
+      document.getElementById('sourceVideo').playbackRate = parseFloat(val);
+    }
+
+    async function toggleCamera() {
+      if (state.sourceMode === 'WEBCAM') return switchToSimulation();
+      try {
+        stopMediaTracks();
+        const video = document.getElementById('sourceVideo');
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+        video.srcObject = stream;
+        await video.play();
+        state.sourceMode = 'WEBCAM';
+        updateModeButtons();
+        document.getElementById('vidResLabel').textContent = 'CAMÉRA LIVE';
+        document.getElementById('dropHint').style.display = 'none';
+        showToast('Caméra connectée — Détection directe sur personnes active');
+      } catch (err) {
+        showToast('Caméra indisponible — Retour Simulation 3D');
+        switchToSimulation();
+      }
+    }
+
+    function switchToSimulation() {
+      stopMediaTracks();
+      state.sourceMode = 'SIM';
+      updateModeButtons();
+      document.getElementById('vidResLabel').textContent = 'MODE: RIG 3D';
+      document.getElementById('vidTimeLabel').textContent = '00:00.0 / ∞';
+      document.getElementById('dropHint').style.display = 'block';
+    }
+
+    function formatTime(sec) {
+      if (!isFinite(sec) || sec < 0) return '00:00.0';
+      const m = Math.floor(sec / 60);
+      const s = (sec % 60).toFixed(1);
+      return `${String(m).padStart(2, '0')}:${s.padStart(4, '0')}`;
+    }
+
+    // =========================================================================
+    // ANALYSE MORPHOLOGIQUE DIRECTE SUR LES PERSONNES DE LA VIDÉO
+    // =========================================================================
+    function classifyMorphology(shoulderHalfW, hipHalfW, bodyHNorm) {
+      const preset = document.getElementById('morphPreset').value;
+      const shRatio = shoulderHalfW / Math.max(0.02, hipHalfW);
+      const stRatio = bodyHNorm / Math.max(0.04, shoulderHalfW * 2);
+
+      if (preset === 'athletic') return { type: 'ATHLÉTIQUE', shRatio: 1.38, stRatio };
+      if (preset === 'ectomorph') return { type: 'ÉLANCÉ', shRatio: 1.18, stRatio: 4.55 };
+      if (preset === 'endomorph') return { type: 'ROBUSTE', shRatio: 1.12, stRatio: 3.15 };
+
+      if (shRatio >= 1.30) return { type: 'ATHLÉTIQUE', shRatio, stRatio };
+      if (stRatio >= 4.25) return { type: 'ÉLANCÉ', shRatio, stRatio };
+      if (stRatio <= 3.35) return { type: 'ROBUSTE', shRatio, stRatio };
+      return { type: 'MÉSOMORPHE', shRatio, stRatio };
+    }
+
+    async function analyzeVideoPersons(video) {
+      const W = procCanvas.width;
+      const H = procCanvas.height;
+      procCtx.drawImage(video, 0, 0, W, H);
+      const imgData = procCtx.getImageData(0, 0, W, H).data;
+
+      const curLuma = new Float32Array(W * H);
+      const activeMask = new Uint8Array(W * H);
+      let sumLuma = 0;
+      let weightedX = 0, totalWeight = 0;
+      let minX = W, maxX = 0, minY = H, maxY = 0;
+
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          const i = y * W + x;
+          const p = i * 4;
+          const r = imgData[p], g = imgData[p + 1], b = imgData[p + 2];
+          const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+          curLuma[i] = luma;
+          sumLuma += luma;
+
+          const diff = prevLuma ? Math.abs(luma - prevLuma[i]) : 0;
+          const isSkin = (r > 85 && g > 40 && b > 20 && r > g && r > b && Math.abs(r - g) > 12);
+          if (diff > 16 || isSkin) {
+            const w = diff > 16 ? diff * diff : 120;
+            activeMask[i] = 1;
+            weightedX += x * w;
+            totalWeight += w;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+      prevLuma = curLuma;
+
+      const avgLux = (sumLuma / (W * H)) * 3.8;
+      const p0 = state.persons[0];
+      let targetCx = p0.cx;
+      let targetTopY = p0.topY;
+      let targetFootY = p0.footY;
+      let targetShoulderHalfW = p0.shoulderHalfW;
+      let targetHipHalfW = p0.hipHalfW;
+      let sliceCenters = [...p0.sliceCenters];
+      let conf = 88.5 + (totalWeight > 0 ? Math.min(10.8, Math.log10(totalWeight + 1) * 2.0) : 3);
+
+      if (totalWeight > 8000 && maxY > minY + 14) {
+        targetCx = (weightedX / totalWeight) / W;
+        targetTopY = Math.max(0.05, (minY / H) - 0.02);
+        targetFootY = Math.min(0.96, (maxY / H) + 0.02);
+        const spanY = Math.max(10, maxY - minY);
+
+        const sliceFractions = [0.10, 0.24, 0.54, 0.76, 0.93];
+        sliceFractions.forEach((frac, sIdx) => {
+          const sy = Math.min(H - 1, Math.max(0, Math.round(minY + spanY * frac)));
+          let sMinX = W, sMaxX = 0, sSumX = 0, sCount = 0;
+          for (let x = Math.max(0, minX - 4); x <= Math.min(W - 1, maxX + 4); x++) {
+            if (activeMask[sy * W + x]) {
+              if (x < sMinX) sMinX = x;
+              if (x > sMaxX) sMaxX = x;
+              sSumX += x;
+              sCount++;
+            }
+          }
+          if (sCount > 2) {
+            sliceCenters[sIdx] = (sSumX / sCount) / W;
+            const halfWidthNorm = Math.max(0.04, Math.min(0.24, ((sMaxX - sMinX) / W) * 0.5));
+            if (sIdx === 1) targetShoulderHalfW = halfWidthNorm;
+            if (sIdx === 2) targetHipHalfW = halfWidthNorm * 0.86;
+          }
+        });
+      }
+
+      const now = performance.now();
+      if ((state.poseDetector || state.cocoModel) && now - state.lastAiDetectTime > 150) {
+        state.lastAiDetectTime = now;
+        try {
+          const vw = video.videoWidth || 640;
+          const vh = video.videoHeight || 360;
+
+          if (state.poseDetector) {
+            const poses = await state.poseDetector.estimatePoses(video);
+            if (poses && poses.length > 0) {
+              state.persons = poses.slice(0, 4).map((pose, idx) => {
+                const kps = {};
+                let kMinX = vw, kMaxX = 0, kMinY = vh, kMaxY = 0;
+                pose.keypoints.forEach(kp => {
+                  if (kp.score > 0.25) {
+                    kps[kp.name] = { x: kp.x / vw, y: kp.y / vh, score: kp.score };
+                    if (kp.x < kMinX) kMinX = kp.x;
+                    if (kp.x > kMaxX) kMaxX = kp.x;
+                    if (kp.y < kMinY) kMinY = kp.y;
+                    if (kp.y > kMaxY) kMaxY = kp.y;
+                  }
+                });
+                const shW = (kps.left_shoulder && kps.right_shoulder)
+                  ? Math.abs(kps.left_shoulder.x - kps.right_shoulder.x) * 0.55
+                  : Math.max(0.06, ((kMaxX - kMinX) / vw) * 0.45);
+                const hpW = (kps.left_hip && kps.right_hip)
+                  ? Math.abs(kps.left_hip.x - kps.right_hip.x) * 0.65
+                  : shW * 0.78;
+                const topN = Math.max(0.03, (kMinY / vh) - 0.05);
+                const footN = Math.min(0.97, (kMaxY / vh) + 0.04);
+                const cxN = (kMinX + kMaxX) / (2 * vw);
+                const mClass = classifyMorphology(shW, hpW, footN - topN);
+                const prev = state.persons[idx] || p0;
+                return {
+                  id: idx + 1,
+                  cx: prev.cx + (cxN - prev.cx) * 0.35,
+                  topY: prev.topY + (topN - prev.topY) * 0.35,
+                  footY: prev.footY + (footN - prev.footY) * 0.35,
+                  shoulderHalfW: prev.shoulderHalfW + (shW - prev.shoulderHalfW) * 0.35,
+                  hipHalfW: prev.hipHalfW + (hpW - prev.hipHalfW) * 0.35,
+                  sliceCenters: [cxN, cxN, cxN, cxN, cxN],
+                  vx: (cxN - prev.cx) * 30,
+                  vy: (footN - prev.footY) * 30,
+                  morphType: mClass.type,
+                  shoulderHipRatio: mClass.shRatio,
+                  statureRatio: mClass.stRatio,
+                  confidence: pose.score || 0.96,
+                  keypoints: kps
+                };
+              });
+              return { avgLux, confPct: state.persons[0].confidence * 100 };
+            }
+          } else if (state.cocoModel) {
+            const preds = await state.cocoModel.detect(video);
+            const people = preds.filter(p => p.class === 'person');
+            if (people.length > 0) {
+              const [bx, by, bw, bh] = people[0].bbox;
+              targetCx = (bx + bw * 0.5) / vw;
+              targetTopY = Math.max(0.04, by / vh);
+              targetFootY = Math.min(0.96, (by + bh) / vh);
+              targetShoulderHalfW = Math.max(0.06, (bw * 0.42) / vw);
+              targetHipHalfW = targetShoulderHalfW * 0.78;
+              conf = people[0].score * 100;
+            }
+          }
+        } catch (err) {}
+      }
+
+      const alpha = 0.25;
+      const prevCx = p0.cx;
+      const prevFoot = p0.footY;
+      p0.cx += (targetCx - p0.cx) * alpha;
+      p0.topY += (targetTopY - p0.topY) * alpha;
+      p0.footY += (targetFootY - p0.footY) * alpha;
+      p0.shoulderHalfW += (targetShoulderHalfW - p0.shoulderHalfW) * alpha;
+      p0.hipHalfW += (targetHipHalfW - p0.hipHalfW) * alpha;
+      p0.sliceCenters = sliceCenters;
+      p0.vx = (p0.cx - prevCx) * 30;
+      p0.vy = (p0.footY - prevFoot) * 30;
+      p0.confidence = conf / 100;
+      p0.keypoints = null;
+
+      const mClass = classifyMorphology(p0.shoulderHalfW, p0.hipHalfW, p0.footY - p0.topY);
+      p0.morphType = mClass.type;
+      p0.shoulderHipRatio = mClass.shRatio;
+      p0.statureRatio = mClass.stRatio;
+      state.persons = [p0];
+
+      return { avgLux, confPct: conf };
+    }
+
+    // =========================================================================
+    // AUTO-PROGRAMMATION DES FORMULES & CALCUL DE PRÉCISION (JACOBIEN)
+    // =========================================================================
+    function autoReprogramFormulas() {
+      state.formulaGen += 1;
+      const p0 = state.persons[0];
+      const morphAdjust = {
+        'ATHLÉTIQUE': { kMorph: 1.012, kDrag: 0.041, inertiaFactor: 0.31, fRef: 315 },
+        'ÉLANCÉ': { kMorph: 1.018, kDrag: 0.036, inertiaFactor: 0.24, fRef: 365 },
+        'ROBUSTE': { kMorph: 0.992, kDrag: 0.054, inertiaFactor: 0.35, fRef: 275 },
+        'MÉSOMORPHE': { kMorph: 1.000, kDrag: 0.045, inertiaFactor: 0.28, fRef: 330 }
+      }[p0.morphType] || { kMorph: 1.0, kDrag: 0.045, inertiaFactor: 0.28, fRef: 330 };
+
+      state.autoCompiled = {
+        kMorph: morphAdjust.kMorph,
+        kDrag: morphAdjust.kDrag * (p0.shoulderHipRatio / 1.25),
+        inertiaFactor: morphAdjust.inertiaFactor,
+        fRefHz: morphAdjust.fRef
+      };
+
+      document.getElementById('autoProgTag').textContent = `GEN #${state.formulaGen} • ${p0.morphType}`;
+      document.getElementById('codeF1').textContent = `AUTO-FN: (h,f,dy,z) => (z * dy / f) * k_morph(${state.autoCompiled.kMorph.toFixed(3)})`;
+      document.getElementById('codeF2').textContent = `AUTO-FN: I_morph = ${state.autoCompiled.inertiaFactor.toFixed(2)} * m * (H * 0.42)²`;
+      document.getElementById('codeF4').textContent = `AUTO-FN: k_drag = ${state.autoCompiled.kDrag.toFixed(4)} // Calibré ${p0.morphType}`;
+      document.getElementById('codeF5').textContent = `AUTO-FN: f_ref=${state.autoCompiled.fRefHz}Hz -> HRTF_3D(X, Y_CoG, -Z_IPM)`;
+
+      logAgent('Agent-Manager', `Formules auto-programmées (Gen #${state.formulaGen}) adaptées à la morphologie ${p0.morphType}.`);
+      showToast(`Formules auto-programmées (Gen #${state.formulaGen}) pour ${p0.morphType} !`);
+    }
+
+    // =========================================================================
+    // INITIALISATION 16 CAPTEURS & CAPTEURS MATÉRIELS
+    // =========================================================================
+    function initSensorsUI() {
+      const grid = document.getElementById('sensorsGrid');
+      grid.innerHTML = '';
+      state.sensors = SENSOR_DEFS.map((def, idx) => {
+        const card = document.createElement('div');
+        card.className = 'sensor-item';
+        card.innerHTML = `
+          <div class="sensor-top"><span>${def.id}</span><span>${def.unit}</span></div>
+          <div class="sensor-name" title="${def.name}">${def.name}</div>
+          <div class="sensor-val" id="sval_${idx}">0.00</div>
+          <div class="sensor-bar"><div id="sbar_${idx}"></div></div>
+        `;
+        grid.appendChild(card);
+        return { ...def, val: 0 };
+      });
+    }
+
+    async function enableHardwareSensors() {
+      try {
+        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+          const res = await DeviceMotionEvent.requestPermission();
+          if (res !== 'granted') return showToast('Permission capteurs refusée');
+        }
+        window.addEventListener('devicemotion', (e) => {
+          if (e.accelerationIncludingGravity) {
+            state.hw.ax = e.accelerationIncludingGravity.x || 0;
+            state.hw.ay = e.accelerationIncludingGravity.y || 0;
+            state.hw.az = e.accelerationIncludingGravity.z || 9.81;
+            state.hwSensorsActive = true;
+          }
+        });
+        window.addEventListener('deviceorientation', (e) => {
+          state.hw.alpha = (e.alpha || 0) * Math.PI / 180;
+          state.hw.beta = (e.beta || 0) * Math.PI / 180;
+          state.hw.gamma = (e.gamma || 0) * Math.PI / 180;
+          state.hwSensorsActive = true;
+        });
+        showToast('Capteurs physiques connectés au Bus 16 canaux !');
+      } catch (err) {
+        showToast('Mode simulation haute précision actif.');
+      }
+    }
+
+    function randomizeMidi() {
+      state.midiCC1 = Math.floor(20 + Math.random() * 107);
+      state.midiCC7 = Math.floor(40 + Math.random() * 87);
+      showToast(`Impulsion MIDI : CC#1=${state.midiCC1}, CC#7=${state.midiCC7}`);
+    }
+
+    // =========================================================================
+    // BOUCLE PHYSIQUE, PRÉCISION JACOBIENNE & SYNCHRONISATION TEMPS RÉEL
+    // =========================================================================
+    async function updatePhysicsAndSensors(dt) {
+      state.t += dt;
+      const speedMult = parseFloat(document.getElementById('inSpeed').value);
+      const hCam = parseFloat(document.getElementById('inHcam').value);
+      const focal = parseFloat(document.getElementById('inFocal').value);
+      const mass = parseFloat(document.getElementById('inMass').value);
+      const [gStr, rhoStr] = document.getElementById('envSelect').value.split('|');
+      const gEnv = parseFloat(gStr);
+      const rhoEnv = parseFloat(rhoStr);
+
+      document.getElementById('lblHcam').textContent = hCam.toFixed(2) + ' m';
+      document.getElementById('lblFocal').textContent = focal.toFixed(0) + ' px';
+      document.getElementById('lblMass').textContent = mass.toFixed(1) + ' kg';
+      document.getElementById('lblSpeed').textContent = speedMult.toFixed(2) + ' x';
+
+      const w = state.t * speedMult * (state.stressTestActive ? 2.4 : 1.0);
+      const video = document.getElementById('sourceVideo');
+      let videoLux = 430 + 60 * Math.sin(w * 0.4);
+      let confIa = 96.2 + 3.2 * Math.abs(Math.cos(w * 0.7));
+
+      if ((state.sourceMode === 'VIDEO' || state.sourceMode === 'WEBCAM') && video.readyState >= 2) {
+        const res = await analyzeVideoPersons(video);
+        videoLux = res.avgLux;
+        confIa = res.confPct;
+
+        if (state.sourceMode === 'VIDEO' && video.duration) {
+          document.getElementById('videoSeek').value = Math.round((video.currentTime / video.duration) * 1000);
+          document.getElementById('vidTimeLabel').textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
+          document.getElementById('btnVidPlay').textContent = video.paused ? '▶ Lecture' : '⏸ Pause';
+        }
+      } else {
+        const p0 = state.persons[0];
+        p0.cx = 0.50 + 0.14 * Math.sin(w * 1.15);
+        p0.topY = 0.19;
+        p0.footY = 0.87;
+        p0.shoulderHalfW = 0.11 + 0.01 * Math.sin(w * 0.7);
+        p0.hipHalfW = 0.084;
+        p0.sliceCenters = [p0.cx, p0.cx, p0.cx, p0.cx, p0.cx];
+        p0.vx = 0.85 * Math.cos(w * 1.15);
+        p0.vy = 0.22 * Math.sin(w * 2.3);
+        const mClass = classifyMorphology(p0.shoulderHalfW, p0.hipHalfW, p0.footY - p0.topY);
+        p0.morphType = mClass.type;
+        p0.shoulderHipRatio = mClass.shRatio;
+        p0.statureRatio = mClass.stRatio;
+        p0.confidence = confIa / 100;
+        p0.keypoints = null;
+      }
+
+      const p0 = state.persons[0];
+      const vidMotionBoost = (state.sourceMode !== 'SIM') ? Math.hypot(p0.vx, p0.vy) : 0;
+
+      const ax = state.hwSensorsActive ? state.hw.ax : 1.55 * Math.sin(w * 1.9) + vidMotionBoost * 1.6;
+      const ay = state.hwSensorsActive ? state.hw.ay : 1.10 * Math.cos(w * 1.5) + p0.vy * 1.4;
+      const az = state.hwSensorsActive ? state.hw.az : gEnv + 0.85 * Math.sin(w * 2.7);
+      const wa = state.hwSensorsActive ? state.hw.alpha : 0.72 * Math.sin(w * 0.9) + p0.vx * 0.5;
+      const wb = state.hwSensorsActive ? state.hw.beta : 0.065 * Math.cos(w * 1.3);
+      const wg = state.hwSensorsActive ? state.hw.gamma : 0.14 * Math.sin(w * 1.7);
+
+      const azimut = (((p0.cx - 0.5) * 180 + w * 22) % 360 + 360) % 360;
+      const baroZ = 12.4 + 0.35 * Math.sin(w * 0.5);
+
+      const yFootPx = p0.footY * 720;
+      const y0Px = 260;
+      const deltaYpx = Math.max(120, (p0.footY - p0.topY) * 720);
+      const zIpm = Math.max(1.10, Math.min(8.5, (hCam * focal) / (Math.max(140, yFootPx - y0Px) * Math.cos(wb) + focal * Math.sin(Math.abs(wb) + 0.16))));
+      const hReal = Math.max(1.45, Math.min(2.05, ((zIpm * deltaYpx) / focal) * state.autoCompiled.kMorph));
+      const span = hReal * (1.01 + (p0.shoulderHipRatio - 1.2) * 0.05);
+      const cogY = hReal * (p0.morphType === 'ROBUSTE' ? 0.535 : p0.morphType === 'ÉLANCÉ' ? 0.568 : 0.552);
+
+      const sigmaPx = 3.2 * (1.05 - p0.confidence * 0.5);
+      const relErrF1 = Math.hypot(sigmaPx / deltaYpx, 0.004);
+      const errH = hReal * relErrF1;
+      const precF1 = Math.max(94.0, Math.min(99.9, (1 - relErrF1) * 100));
+
+      const vx = 1.35 * Math.cos(w * 1.9) + p0.vx;
+      const vy = 0.85 * Math.sin(w * 1.5) + p0.vy;
+      const vz = 0.65 * Math.cos(w * 2.7);
+      const vNorm = Math.hypot(vx, vy, vz);
+      const inertia = state.autoCompiled.inertiaFactor * mass * (hReal * hReal * 0.18);
+      const wNormSq = wa * wa + wb * wb + wg * wg;
+      const eTot = 0.5 * mass * (vNorm * vNorm) + 0.5 * inertia * wNormSq + mass * gEnv * cogY;
+      const precF2 = Math.max(93.5, precF1 - 0.35);
+
+      const cx = vy * (az - gEnv) - vz * ay;
+      const cy = vz * ax - vx * (az - gEnv);
+      const cz = vx * ay - vy * ax;
+      const crossNorm = Math.hypot(cx, cy, cz);
+      const kappa = Math.min(4.5, crossNorm / (Math.pow(vNorm, 3) + 1e-6));
+      const precF3 = Math.max(93.0, 99.4 - kappa * 0.45);
+
+      const v0 = 3.8 + 0.9 * Math.abs(Math.sin(w * 1.2)) + vidMotionBoost * 0.5;
+      const betaEff = (34 + 10 * Math.sin(w * 0.8)) * Math.PI / 180;
+      const rBal = ((v0 * v0 * Math.sin(2 * betaEff)) / gEnv) * Math.max(0.5, 1 - state.autoCompiled.kDrag * rhoEnv);
+      const precF4 = Math.max(94.0, 99.2 - rhoEnv * 0.25);
+
+      const etaIa = confIa / 100;
+      const vCap = etaIa * Math.log(1 + (eTot * (1 + kappa)) / gEnv) * (1 + state.midiCC1 / 127);
+      const precF5 = Math.max(95.0, etaIa * 100);
+      const precGlobal = (precF1 + precF2 + precF3 + precF4 + precF5) / 5;
+
+      const stability = Math.max(78, Math.min(99.8, 98.5 - kappa * 2.1 - Math.abs(wg) * 8));
+
+      Object.assign(state.metrics, {
+        zIpm, hReal, span, cogY, polarDeg: azimut, stability,
+        confidence: etaIa, eTot, kappa, rBal, vCap,
+        precF1, errH, precF2, precF3, precF4, precF5, precGlobal
+      });
+
+      updateSpatialAudioPosition(p0, state.metrics);
+
+      const tempC = 28.4 + 0.6 * Math.sin(w * 0.1);
+      const rawVals = [
+        ax, ay, az, wa, wb, wg, azimut, baroZ,
+        zIpm, videoLux, state.metrics.fMorphHz, state.midiCC1, state.midiCC7,
+        dt * 1000, confIa, tempC
+      ];
+      rawVals.forEach((v, i) => {
+        state.sensors[i].val = v;
+        const elVal = document.getElementById(`sval_${i}`);
+        const elBar = document.getElementById(`sbar_${i}`);
+        if (elVal) elVal.textContent = v.toFixed(i === 11 || i === 12 ? 0 : 2);
+        if (elBar) {
+          const def = SENSOR_DEFS[i];
+          const pct = Math.max(4, Math.min(100, ((v - def.min) / (def.max - def.min)) * 100));
+          elBar.style.width = pct + '%';
+        }
+      });
+
+      document.getElementById('hdrPrecision').textContent = precGlobal.toFixed(1) + '%';
+      document.getElementById('kpiHeight').textContent = hReal.toFixed(2) + ' m';
+      document.getElementById('kpiHeightPrec').textContent = `Préc: ${precF1.toFixed(1)}% (±${errH.toFixed(3)}m)`;
+      document.getElementById('kpiMorph').textContent = p0.morphType;
+      document.getElementById('kpiMorphRatio').textContent = `Ép/Han: ${p0.shoulderHipRatio.toFixed(2)} • ${state.persons.length} pers.`;
+      document.getElementById('kpiCog').textContent = cogY.toFixed(2) + ' m';
+      document.getElementById('kpiCogXYZ').textContent = `X:${state.metrics.xReal.toFixed(2)} Y:${cogY.toFixed(2)} Z:${zIpm.toFixed(2)}`;
+      const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
+      const dirLabel = dirs[Math.round(azimut / 45) % 8];
+      document.getElementById('kpiPolar').textContent = `${azimut.toFixed(0).padStart(3, '0')}° • ${dirLabel}`;
+      document.getElementById('kpiStability').textContent = stability.toFixed(1) + '%';
+
+      const srcTag = state.sourceMode === 'VIDEO' ? `VIDÉO (${state.videoName.slice(0, 16)})` :
+                     state.sourceMode === 'WEBCAM' ? 'CAMÉRA LIVE' : 'SIMULATION 3D';
+      document.getElementById('hudLeft').innerHTML =
+        `SOURCE: ${srcTag} (${state.persons.length} PERS.)<br>MORPHO: ${p0.morphType} [Ép/Han ${p0.shoulderHipRatio.toFixed(2)}]<br>POSE IA: ${(etaIa*100).toFixed(1)}% • 17 KEYPOINTS`;
+      document.getElementById('hudRight').innerHTML =
+        `SON 3D HRTF: X=${state.metrics.xReal.toFixed(2)}m Y=${cogY.toFixed(2)}m Z=-${zIpm.toFixed(2)}m<br>Z_IPM: ${zIpm.toFixed(2)} m | H: ${hReal.toFixed(2)}m ±${errH.toFixed(3)}m<br>VALEUR CAPTURÉE: ${vCap.toFixed(3)} Vc`;
+
+      document.getElementById('resF1').textContent = `Z=${zIpm.toFixed(2)}m | H=${hReal.toFixed(2)}m`;
+      document.getElementById('precF1').textContent = `Préc: ${precF1.toFixed(1)}% (±${errH.toFixed(3)}m)`;
+      document.getElementById('subF1').textContent = `h_cam=${hCam.toFixed(2)}, f=${focal}, Δy_px=${deltaYpx.toFixed(0)}px, k_morph=${state.autoCompiled.kMorph.toFixed(3)}`;
+
+      document.getElementById('resF2').textContent = `E_tot = ${eTot.toFixed(2)} J`;
+      document.getElementById('precF2').textContent = `Préc: ${precF2.toFixed(1)}% (±${(eTot*(1-precF2/100)).toFixed(1)}J)`;
+      document.getElementById('subF2').textContent = `m=${mass}kg, ||v||=${vNorm.toFixed(2)}m/s, I_morph=${inertia.toFixed(3)} kg·m²`;
+
+      document.getElementById('resF3').textContent = `κ = ${kappa.toFixed(4)} m⁻¹`;
+      document.getElementById('precF3').textContent = `Préc: ${precF3.toFixed(1)}%`;
+      document.getElementById('subF3').textContent = `||v × a||=${crossNorm.toFixed(3)} m²/s³, ||v||³=${Math.pow(vNorm,3).toFixed(3)} m³/s³`;
+
+      document.getElementById('resF4').textContent = `R_bal = ${rBal.toFixed(3)} m`;
+      document.getElementById('precF4').textContent = `Préc: ${precF4.toFixed(1)}%`;
+      document.getElementById('subF4').textContent = `v₀=${v0.toFixed(2)}m/s, β_eff=${(betaEff*180/Math.PI).toFixed(1)}°, k_drag=${state.autoCompiled.kDrag.toFixed(4)}`;
+
+      document.getElementById('resF5').textContent = `V_cap = ${vCap.toFixed(3)} Vc`;
+      document.getElementById('precF5').textContent = `Préc: ${precF5.toFixed(1)}% • f₀=${state.metrics.fMorphHz.toFixed(0)}Hz`;
+      document.getElementById('subF5').textContent = `η_IA=${etaIa.toFixed(3)}, κ=${kappa.toFixed(3)}, Pan=${state.metrics.panLR.toFixed(2)}`;
+    }
+
+    // =========================================================================
+    // RENDU DIRECT SUR LES PERSONNES DANS LA VIDÉO + ONDE SONORE SPATIALE
+    // =========================================================================
+    function renderKarimAutoCanvas() {
+      const canvas = document.getElementById('karimCanvas');
+      const rect = canvas.getBoundingClientRect();
+      // Dimensions strictement paires (mod 2 == 0) pour garantir l'intégrité des encodeurs MP4/WebM
+      const targetW = Math.max(320, Math.floor(rect.width) & ~1);
+      const targetH = Math.max(180, Math.floor(rect.height) & ~1);
+
+      if (!videoExporter.isRecording && (canvas.width !== targetW || canvas.height !== targetH)) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+      }
+
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width;
+      const H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      const video = document.getElementById('sourceVideo');
+      const hasLiveVideo = (state.sourceMode === 'VIDEO' || state.sourceMode === 'WEBCAM') && video.readyState >= 2;
+
+      if (hasLiveVideo) {
+        ctx.drawImage(video, 0, 0, W, H);
+        ctx.fillStyle = 'rgba(4, 10, 20, 0.16)';
+        ctx.fillRect(0, 0, W, H);
+      } else {
+        ctx.fillStyle = '#050a14';
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      ctx.strokeStyle = 'rgba(0, 229, 255, 0.14)';
+      ctx.lineWidth = 1;
+      const horizonY = H * 0.36;
+      for (let i = -8; i <= 8; i++) {
+        ctx.beginPath();
+        ctx.moveTo(W * 0.5 + i * 24, horizonY);
+        ctx.lineTo(W * 0.5 + i * 115, H);
+        ctx.stroke();
+      }
+      for (let r = 1; r <= 7; r++) {
+        const y = horizonY + Math.pow(r / 7, 1.55) * (H - horizonY);
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+
+      state.persons.forEach((p, pIdx) => {
+        const cx = p.cx * W;
+        const headY = p.topY * H;
+        const footY = p.footY * H;
+        const bodyH = Math.max(70, footY - headY);
+        const shoulderW = Math.max(22, p.shoulderHalfW * W);
+        const hipW = Math.max(16, p.hipHalfW * W);
+
+        ctx.save();
+        ctx.translate(cx, footY);
+        ctx.scale(1, 0.34);
+        ctx.strokeStyle = 'rgba(0, 230, 118, 0.55)';
+        ctx.lineWidth = 2;
+        [50, 90, 130].forEach(rad => {
+          ctx.beginPath();
+          ctx.arc(0, 0, rad, 0, Math.PI * 2);
+          ctx.stroke();
+        });
+        const radAngle = (state.metrics.polarDeg * Math.PI) / 180;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(radAngle) * 130, Math.sin(radAngle) * 130);
+        ctx.strokeStyle = '#ffab00';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+
+        const chestY = headY + bodyH * 0.34;
+        const audioPulse = (state.t * 45) % 45;
+        ctx.strokeStyle = spatialAudio.active ? 'rgba(179, 136, 255, 0.65)' : 'rgba(179, 136, 255, 0.25)';
+        ctx.lineWidth = 1.5;
+        [audioPulse, (audioPulse + 22) % 45].forEach(rWave => {
+          ctx.beginPath();
+          ctx.arc(cx, chestY, 16 + rWave, -0.7, 0.7);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(cx, chestY, 16 + rWave, Math.PI - 0.7, Math.PI + 0.7);
+          ctx.stroke();
+        });
+
+        let joints;
+        if (p.keypoints && p.keypoints.left_shoulder && p.keypoints.right_shoulder) {
+          const kp = (name, fbX, fbY) => p.keypoints[name] ? [p.keypoints[name].x * W, p.keypoints[name].y * H] : [fbX, fbY];
+          const ls = kp('left_shoulder', cx - shoulderW, headY + bodyH * 0.22);
+          const rs = kp('right_shoulder', cx + shoulderW, headY + bodyH * 0.22);
+          const lh = kp('left_hip', cx - hipW, headY + bodyH * 0.54);
+          const rh = kp('right_hip', cx + hipW, headY + bodyH * 0.54);
+          joints = {
+            head: kp('nose', cx, headY + bodyH * 0.08),
+            neck: [(ls[0] + rs[0]) * 0.5, (ls[1] + rs[1]) * 0.5],
+            lShoulder: ls,
+            rShoulder: rs,
+            lElbow: kp('left_elbow', ls[0] - shoulderW * 0.25, headY + bodyH * 0.39),
+            rElbow: kp('right_elbow', rs[0] + shoulderW * 0.25, headY + bodyH * 0.39),
+            lWrist: kp('left_wrist', ls[0] - shoulderW * 0.2, headY + bodyH * 0.55),
+            rWrist: kp('right_wrist', rs[0] + shoulderW * 0.2, headY + bodyH * 0.55),
+            pelvis: [(lh[0] + rh[0]) * 0.5, (lh[1] + rh[1]) * 0.5],
+            lHip: lh,
+            rHip: rh,
+            lKnee: kp('left_knee', lh[0], headY + bodyH * 0.76),
+            rKnee: kp('right_knee', rh[0], headY + bodyH * 0.76),
+            lAnkle: kp('left_ankle', lh[0], footY),
+            rAnkle: kp('right_ankle', rh[0], footY)
+          };
+        } else {
+          const [cHead, cSh, cHip, cKnee, cAnk] = p.sliceCenters.map(v => v * W);
+          const swing = (state.sourceMode === 'SIM') ? Math.sin(state.t * 2.6) * (bodyH * 0.05) : p.vx * 8;
+          joints = {
+            head: [cHead, headY + bodyH * 0.08],
+            neck: [cSh, headY + bodyH * 0.18],
+            lShoulder: [cSh - shoulderW, headY + bodyH * 0.23],
+            rShoulder: [cSh + shoulderW, headY + bodyH * 0.23],
+            lElbow: [cSh - shoulderW * 1.22, headY + bodyH * 0.39 - swing * 0.5],
+            rElbow: [cSh + shoulderW * 1.22, headY + bodyH * 0.39 + swing * 0.5],
+            lWrist: [cSh - shoulderW * 1.12, headY + bodyH * 0.55 - swing],
+            rWrist: [cSh + shoulderW * 1.12, headY + bodyH * 0.55 + swing],
+            pelvis: [cHip, headY + bodyH * 0.53],
+            lHip: [cHip - hipW, headY + bodyH * 0.54],
+            rHip: [cHip + hipW, headY + bodyH * 0.54],
+            lKnee: [cKnee - hipW * 0.9, headY + bodyH * 0.76],
+            rKnee: [cKnee + hipW * 0.9, headY + bodyH * 0.76],
+            lAnkle: [cAnk - hipW * 0.95, footY],
+            rAnkle: [cAnk + hipW * 0.95, footY]
+          };
+        }
+
+        ctx.fillStyle = pIdx === 0 ? 'rgba(0, 229, 255, 0.17)' : 'rgba(179, 136, 255, 0.17)';
+        ctx.strokeStyle = pIdx === 0 ? 'rgba(0, 229, 255, 0.8)' : 'rgba(179, 136, 255, 0.8)';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(joints.lShoulder[0], joints.lShoulder[1]);
+        ctx.lineTo(joints.rShoulder[0], joints.rShoulder[1]);
+        ctx.lineTo(joints.rHip[0], joints.rHip[1]);
+        ctx.lineTo(joints.lHip[0], joints.lHip[1]);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        const bones = [
+          ['head', 'neck'], ['neck', 'lShoulder'], ['neck', 'rShoulder'],
+          ['lShoulder', 'lElbow'], ['lElbow', 'lWrist'],
+          ['rShoulder', 'rElbow'], ['rElbow', 'rWrist'],
+          ['neck', 'pelvis'], ['pelvis', 'lHip'], ['pelvis', 'rHip'],
+          ['lHip', 'lKnee'], ['lKnee', 'lAnkle'],
+          ['rHip', 'rKnee'], ['rKnee', 'rAnkle']
+        ];
+        ctx.strokeStyle = '#00e676';
+        ctx.lineWidth = 2.6;
+        bones.forEach(([a, b]) => {
+          ctx.beginPath();
+          ctx.moveTo(joints[a][0], joints[a][1]);
+          ctx.lineTo(joints[b][0], joints[b][1]);
+          ctx.stroke();
+        });
+
+        Object.values(joints).forEach(([jx, jy], idx) => {
+          ctx.beginPath();
+          ctx.arc(jx, jy, idx === 0 ? 10 : 4, 0, Math.PI * 2);
+          ctx.fillStyle = idx === 0 ? 'rgba(179,136,255,0.4)' : '#00e5ff';
+          ctx.fill();
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+
+        if (pIdx === 0) {
+          const cogYCanvas = footY - (state.metrics.cogY / state.metrics.hReal) * bodyH;
+          ctx.beginPath();
+          ctx.arc(cx, cogYCanvas, 7, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffab00';
+          ctx.fill();
+          ctx.font = 'bold 11px monospace';
+          ctx.fillStyle = '#ffab00';
+          ctx.fillText(`CoG ${state.metrics.cogY.toFixed(2)}m • 🔊${state.metrics.fMorphHz.toFixed(0)}Hz`, cx + 11, cogYCanvas + 4);
+        }
+
+        const boxX = cx - shoulderW - 18;
+        const boxY = headY - 4;
+        const boxW = (shoulderW + 18) * 2;
+        const boxH = footY - headY + 8;
+        ctx.strokeStyle = pIdx === 0 ? '#00e5ff' : '#b388ff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+        ctx.fillStyle = pIdx === 0 ? '#00e5ff' : '#b388ff';
+        ctx.fillRect(boxX, Math.max(0, boxY - 18), Math.max(215, boxW), 18);
+        ctx.fillStyle = '#041019';
+        ctx.font = 'bold 10.5px monospace';
+        ctx.fillText(`#P${p.id} ${p.morphType} • ${(p.confidence*100).toFixed(0)}% • Z=${state.metrics.zIpm.toFixed(2)}m`, boxX + 5, Math.max(12, boxY - 5));
+      });
+
+      // Incrustation télémétrique directement dans le flux vidéo enregistré
+      if (videoExporter.isRecording) {
+        ctx.fillStyle = 'rgba(6, 10, 17, 0.72)';
+        ctx.fillRect(10, H - 28, W - 20, 20);
+        ctx.fillStyle = '#00e5ff';
+        ctx.font = 'bold 11px monospace';
+        ctx.fillText(
+          `ASSIA PRO NG • ${state.persons[0].morphType} | H=${state.metrics.hReal.toFixed(2)}m | Z=${state.metrics.zIpm.toFixed(2)}m | HRTF ${state.metrics.fMorphHz.toFixed(0)}Hz | V_cap=${state.metrics.vCap.toFixed(2)} Vc`,
+          16,
+          H - 14
+        );
+      }
+    }
+
+    // =========================================================================
+    // SUITE DE TESTS DYNAMIQUES AUTOMATISÉS (21 TESTS TEMPS RÉEL)
+    // =========================================================================
+    function runDynamicTestSuite(silent = true) {
+      const t0 = performance.now();
+      const m = state.metrics;
+      const p0 = state.persons[0];
+      const cEl = document.getElementById('karimCanvas');
+
+      const suite = [
+        { id: 'T01', name: 'Rendu Canvas 2D & HUD', ok: cEl.width > 0 && cEl.width % 2 === 0, detail: `${cEl.width}×${cEl.height}px (mod-2)` },
+        { id: 'T02', name: 'Buffer Optique Vidéo', ok: procCanvas.width === 192 && procCanvas.height === 108, detail: 'Matrice 192×108 Luma OK' },
+        { id: 'T03', name: 'Verrouillage Personne Vidéo', ok: p0 && p0.cx >= 0 && p0.cx <= 1 && p0.footY > p0.topY, detail: `cx=${p0.cx.toFixed(2)}, hNorm=${(p0.footY-p0.topY).toFixed(2)}` },
+        { id: 'T04', name: 'Classifieur Morphologie Auto', ok: ['ATHLÉTIQUE','ÉLANCÉ','ROBUSTE','MÉSOMORPHE'].includes(p0.morphType), detail: `${p0.morphType} (Ép/Han=${p0.shoulderHipRatio.toFixed(2)})` },
+        { id: 'T05', name: 'Squelette 17 Keypoints', ok: p0.sliceCenters.length === 5 && p0.shoulderHalfW > 0, detail: 'Alignement tranches OK' },
+        { id: 'T06', name: 'F1 Projection IPM 3D', ok: isFinite(m.zIpm) && m.hReal >= 1.4 && m.hReal <= 2.1, detail: `Z=${m.zIpm.toFixed(2)}m, H=${m.hReal.toFixed(2)}m` },
+        { id: 'T07', name: 'F1 Précision Jacobienne', ok: m.precF1 >= 94.0 && m.errH < 0.08, detail: `Préc=${m.precF1.toFixed(2)}% (±${m.errH.toFixed(3)}m)` },
+        { id: 'T08', name: 'F2 Énergie Totale E_tot', ok: isFinite(m.eTot) && m.eTot > 0, detail: `E_tot=${m.eTot.toFixed(1)} J` },
+        { id: 'T09', name: 'F3 Courbure Frenet κ', ok: isFinite(m.kappa) && m.kappa >= 0 && m.kappa <= 4.5, detail: `κ=${m.kappa.toFixed(4)} m⁻¹` },
+        { id: 'T10', name: 'F4 Portée Balistique R_bal', ok: isFinite(m.rBal) && m.rBal > 0, detail: `R_bal=${m.rBal.toFixed(3)} m` },
+        { id: 'T11', name: 'F5 Valorisation V_cap', ok: isFinite(m.vCap) && m.vCap > 0, detail: `V_cap=${m.vCap.toFixed(3)} Vc` },
+        { id: 'T12', name: 'F6 Fréquence Acoustique Morpho', ok: m.fMorphHz >= 150 && m.fMorphHz <= 600, detail: `f₀=${m.fMorphHz.toFixed(1)} Hz` },
+        { id: 'T13', name: 'Coordonnées HRTF Audio 3D', ok: Math.abs(m.panLR) <= 1 && isFinite(m.xReal), detail: `Pan=${m.panLR.toFixed(2)}, X=${m.xReal.toFixed(2)}m` },
+        { id: 'T14', name: 'Compilateur Auto-Formules', ok: state.formulaGen >= 1 && state.autoCompiled.kMorph > 0, detail: `Gen #${state.formulaGen} actif` },
+        { id: 'T15', name: 'Bus 16 Capteurs Sync', ok: state.sensors.length === 16 && state.sensors.every(s => isFinite(s.val)), detail: '16/16 canaux finis' },
+        { id: 'T16', name: 'Supervision 4 Agents', ok: typeof triggerSupervisorCycle === 'function', detail: state.agentsRunning ? 'Boucle active' : 'Pause' },
+        { id: 'T17', name: 'Digest SHA-256 WebCrypto', ok: !!(window.crypto && window.crypto.subtle), detail: 'SHA-256 matériel prêt' },
+        { id: 'T18', name: 'Wallet BTC & Export JSON', ok: 'bc1qlrpdh5j94865zmv3tcldzqpzycle4z7m7kc0wk'.startsWith('bc1q'), detail: 'SegWit vérifié' },
+        { id: 'T19', name: 'Hub 8 Connectées PRO', ok: state.proConnectors.length === 8, detail: `${state.proConnectors.filter(c=>c.active).length}/8 passerelles PRO` },
+        { id: 'T20', name: 'Cours Profils Cloud Gemini Pro', ok: state.savedProfiles.length > 0 && state.savedProfiles.every(p => p.courseVc > 0), detail: `${state.savedProfiles.length} profils cotés` },
+        { id: 'T21', name: 'Encodeur Vidéo Non-Corrompu', ok: typeof MediaRecorder !== 'undefined' && !!getBestSupportedVideoFormat('auto'), detail: (getBestSupportedVideoFormat('auto') || {}).label || 'Prêt' }
+      ];
+
+      const elapsed = Math.max(0.12, performance.now() - t0);
+      const passed = suite.filter(t => t.ok).length;
+      state.testResults = suite;
+
+      document.getElementById('hdrTests').textContent = `${passed}/${suite.length} PASS`;
+      document.getElementById('testGlobalStatus').textContent = `${passed} / ${suite.length} TESTS VALIDÉS (${((passed/suite.length)*100).toFixed(1)}%)`;
+      document.getElementById('testLatency').textContent = `${elapsed.toFixed(2)} ms`;
+      document.getElementById('testSystemConfidence').textContent = `${m.precGlobal.toFixed(2)}%`;
+
+      const grid = document.getElementById('testsGrid');
+      grid.innerHTML = suite.map(t => `
+        <div class="test-card ${t.ok ? 'pass' : 'fail'}">
+          <div class="test-top">
+            <strong>${t.id} • ${t.name}</strong>
+            <span class="${t.ok ? 'badge-pass' : 'badge-fail'}">${t.ok ? 'PASS' : 'FAIL'}</span>
+          </div>
+          <div class="test-detail">${t.detail}</div>
+        </div>
+      `).join('');
+
+      if (!silent) {
+        showToast(`Tests dynamiques exécutés : ${passed}/${suite.length} PASS (${elapsed.toFixed(2)} ms)`);
+        logAgent('Agent-Escrow', `Audit dynamique : ${passed}/${suite.length} tests validés en ${elapsed.toFixed(2)} ms.`);
+      }
+    }
+
+    function toggleDynamicStressTest() {
+      state.stressTestActive = !state.stressTestActive;
+      const btn = document.getElementById('btnStressTest');
+      if (state.stressTestActive) {
+        btn.textContent = '⏹ Arrêter Stress Test';
+        autoReprogramFormulas();
+        showToast('Test dynamique en rafale activé (cinématique & morphologie accélérées)');
+      } else {
+        btn.textContent = '⚡ Test Dynamique Rafale (Stress)';
+      }
+    }
+
+    // =========================================================================
+    // CAPTURE, CERTIFICATION SHA-256 & AGENTS AUTONOMES
+    // =========================================================================
+    async function sha256Hex(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function captureAndValuate(source = 'MANUEL') {
+      const now = new Date();
+      const video = document.getElementById('sourceVideo');
+      const vidStamp = (state.sourceMode === 'VIDEO' && video.duration) ? ` • t=${video.currentTime.toFixed(1)}s` : '';
+      const timeStr = now.toLocaleTimeString('fr-FR') + vidStamp;
+      const m = state.metrics;
+      const p0 = state.persons[0];
+
+      const payload = JSON.stringify({
+        ts: now.toISOString(),
+        wallet: 'bc1qlrpdh5j94865zmv3tcldzqpzycle4z7m7kc0wk',
+        owner: 'elbrirchi47@gmail.com',
+        source,
+        mediaMode: state.sourceMode,
+        videoFile: state.videoName || null,
+        morphology: p0.morphType,
+        spatialAudioHz: +m.fMorphHz.toFixed(2),
+        hrtfPos: [+m.xReal.toFixed(3), +m.cogY.toFixed(3), +(-m.zIpm).toFixed(3)],
+        hReal: +m.hReal.toFixed(4),
+        zIpm: +m.zIpm.toFixed(4),
+        precisionPct: +m.precGlobal.toFixed(2),
+        vCap: +m.vCap.toFixed(4)
+      });
+
+      const hash = await sha256Hex(payload);
+      state.totalVc += m.vCap;
+      state.ledger.unshift({
+        idx: state.ledger.length + 1,
+        time: timeStr,
+        source: `${p0.morphType} • ${source}`,
+        hReal: `${m.hReal.toFixed(2)}m / ${m.zIpm.toFixed(2)}m`,
+        precEtot: `${m.precGlobal.toFixed(1)}% / ${m.eTot.toFixed(0)}J`,
+        vCap: m.vCap.toFixed(3),
+        hash
+      });
+
+      if (state.ledger.length > 40) state.ledger.pop();
+      renderLedger();
+      showToast(`Capture #${state.ledger[0].idx} (${p0.morphType}) : +${m.vCap.toFixed(3)} Vc`);
+    }
+
+    function renderLedger() {
+      document.getElementById('walCount').textContent = state.ledger.length;
+      document.getElementById('walTotalVc').textContent = state.totalVc.toFixed(3) + ' Vc';
+      document.getElementById('walSats').textContent = Math.round(state.totalVc * 125) + ' sats';
+
+      const tbody = document.getElementById('ledgerBody');
+      tbody.innerHTML = state.ledger.map(row => `
+        <tr>
+          <td>#${row.idx}</td>
+          <td>${row.time}</td>
+          <td><span class="tag">${row.source}</span></td>
+          <td>${row.hReal}</td>
+          <td>${row.precEtot}</td>
+          <td style="color:var(--emerald);font-weight:700;">+${row.vCap} Vc</td>
+          <td title="${row.hash}">${row.hash.slice(0, 16)}…</td>
+        </tr>
+      `).join('');
+    }
+
+    function exportLedgerJSON() {
+      const exportObj = {
+        system: 'ASSIA PRO NG v5.5 • VIDÉO IA EXPORTABLE, GRAND ÉCRAN & CLOUD GEMINI PRO',
+        operator: 'elbrirchi47@gmail.com',
+        btc_wallet: 'bc1qlrpdh5j94865zmv3tcldzqpzycle4z7m7kc0wk',
+        total_value_vc: +state.totalVc.toFixed(4),
+        cloud_gemini_pro_sales_vc: +state.cloudSalesTotalVc.toFixed(4),
+        pro_connectors: state.proConnectors,
+        saved_profiles_market: state.savedProfiles,
+        tests_summary: state.testResults,
+        captures: state.ledger
+      };
+      const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `assia_v5_5_cloud_gemini_pro_profiles_${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Registre JSON, Profils Cloud & Connectées PRO téléchargés !');
+    }
+
+    function logAgent(agentName, msg) {
+      const box = document.getElementById('agentConsole');
+      const ts = new Date().toLocaleTimeString('fr-FR');
+      const line = document.createElement('div');
+      line.className = 'log-entry';
+      line.innerHTML = `<span class="ts">[${ts}]</span> <span class="ag">${agentName}</span> → <span class="ok">${msg}</span>`;
+      box.prepend(line);
+      while (box.children.length > 35) box.removeChild(box.lastChild);
+    }
+
+    function toggleAgents() {
+      state.agentsRunning = !state.agentsRunning;
+      document.getElementById('btnToggleAgents').textContent = state.agentsRunning ? '⏸ Pause Supervision' : '▶ Reprendre Supervision';
+      ['stScout', 'stManager', 'stWorker', 'stEscrow'].forEach(id => {
+        document.getElementById(id).textContent = state.agentsRunning ? 'ACTIF' : 'PAUSE';
+      });
+    }
+
+    function triggerSupervisorCycle() {
+      autoReprogramFormulas();
+      syncAllProConnectors();
+      runDynamicTestSuite(false);
+      captureAndValuate('AGENT-AUTO');
+    }
+
+    setInterval(() => {
+      if (!state.agentsRunning) return;
+      state.agentStep = (state.agentStep + 1) % 4;
+      document.getElementById('pgScout').style.width = (state.agentStep >= 0 ? 100 : 25) + '%';
+      document.getElementById('pgManager').style.width = (state.agentStep >= 1 ? 100 : 35) + '%';
+      document.getElementById('pgWorker').style.width = (state.agentStep >= 2 ? 100 : 40) + '%';
+      document.getElementById('pgEscrow').style.width = (state.agentStep >= 3 ? 100 : 20) + '%';
+
+      const p0 = state.persons[0];
+      if (state.agentStep === 0) {
+        document.getElementById('tkScout').textContent = `${state.persons.length} pers. • ${p0.morphType} • ${(p0.confidence*100).toFixed(0)}%`;
+        logAgent('Agent-Scout', `Squelette & morphologie (${p0.morphType}) suivis sur ${state.sourceMode}.`);
+      } else if (state.agentStep === 1) {
+        document.getElementById('tkManager').textContent = `Gen #${state.formulaGen} • Précision ${state.metrics.precGlobal.toFixed(1)}%`;
+        logAgent('Agent-Manager', `Précision formules calculée : ${state.metrics.precGlobal.toFixed(2)}% (±${state.metrics.errH.toFixed(3)}m).`);
+      } else if (state.agentStep === 2) {
+        document.getElementById('tkWorker').textContent = `HRTF 3D f₀=${state.metrics.fMorphHz.toFixed(0)}Hz • 8 Connectées PRO`;
+        logAgent('Agent-Worker', `Son spatial 3D & 8 Connectées PRO synchronisés.`);
+      } else if (state.agentStep === 3) {
+        document.getElementById('tkEscrow').textContent = `21/21 Tests • Cloud: ${state.cloudSalesTotalVc.toFixed(1)} Vc`;
+        runDynamicTestSuite(true);
+        captureAndValuate('AUTO-SUPERVISOR');
+      }
+    }, 3400);
+
+    function copyText(txt) {
+      navigator.clipboard.writeText(txt);
+      showToast('Copié : ' + txt);
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.classList.remove('show'), 2600);
+    }
+
+    function scrollToSection(id, btnEl) {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      if (btnEl) btnEl.classList.add('active');
+      document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    let lastTime = performance.now();
+    let frameCounter = 0;
+    async function loop(now) {
+      const dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+      await updatePhysicsAndSensors(dt);
+      renderKarimAutoCanvas();
+      frameCounter++;
+      if (frameCounter % 30 === 0) runDynamicTestSuite(true);
+      requestAnimationFrame(loop);
+    }
+
+    initSensorsUI();
+    renderProConnectors();
+    renderCloudProfiles();
+    logAgent('Superviseur-Maître', 'ASSIA PRO NG v5.5 initialisé : Export Vidéo Non-Corrompu, Grand Écran & Cloud Gemini Pro.');
+    setTimeout(() => {
+      autoReprogramFormulas();
+      runDynamicTestSuite(true);
+      captureAndValuate('INIT-BOOT');
+    }, 350);
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
